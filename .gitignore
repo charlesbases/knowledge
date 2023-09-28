@@ -1,0 +1,7 @@
+# folder
+.idea/
+images/
+k8s.io/
+
+# file
+*.tar

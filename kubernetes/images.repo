@@ -1,0 +1,5 @@
+natsio/prometheus-nats-exporter:0.10.1
+danielqsj/kafka-exporter:v1.6.0
+oliver006/redis_exporter:alpine
+prom/mysqld-exporter:v0.14.0
+prometheuscommunity/postgres-exporter:v0.11.1

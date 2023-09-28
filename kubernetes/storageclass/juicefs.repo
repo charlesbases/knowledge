@@ -1,0 +1,5 @@
+juicedata/mount:v1.0.3-4.9.0
+juicedata/juicefs-csi-driver:v0.18.1
+quay.io/k8scsi/csi-node-driver-registrar:v2.1.0
+quay.io/k8scsi/csi-provisioner:v1.6.0
+quay.io/k8scsi/livenessprobe:v1.1.0
