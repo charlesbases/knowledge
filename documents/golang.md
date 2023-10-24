@@ -1,6 +1,6 @@
 ## 1. gotest
 
-### 1.2 cover
+### 1.2. cover
 
 ```shell
 # 简略信息
@@ -45,6 +45,37 @@ go test -coverprofile=cover.out && go tool cover -html=cover.out -o cover.html
   ```
 
 
+
+------
+
+## 3. benchmark
+
+```shell
+go test -test.bench=. -test.count=1 -test.benchmem .
+```
+
+### 3.1 pprof
+
+```http
+https://zhuanlan.zhihu.com/p/396363069
+```
+
+- ##### graphviz
+
+  ```http
+  https://graphviz.org/download
+  ```
+
+- ##### benchmark
+
+  ```shell
+  go test -test.bench=. -memprofile=mem.out .
+  go tool pprof -http=:8080 mem.out
+  ```
+
+  
+
+------
 
 
 ## * * * * * *
