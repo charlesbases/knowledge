@@ -72,4 +72,8 @@ main() {
   rm -rf $repo
 }
 
+if [[ -z $target ]]; then
+  exit
+fi
+
 main

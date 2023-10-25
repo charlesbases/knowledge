@@ -64,17 +64,43 @@ fi
       ;;
     esac
   done
-  
+
   # 该命令可以识别 '-a -b -c' 选项。其中 '-a' 需要设置 value，'-b -c' 不需要 value
   # getopts 每次调用时，会将下一个 'opt' 放置在变量中，$OPTARG 可以从 '$*' 中拿到参数值。$OPTARG 是内置变量
   # 第一个 ':' 表示忽略错误
   # a: 表示该 'opt' 需要 value
   # b  表示该 'opt' 不需要 value
-  
+
   # 去除 options 之后的参数, 可以在后面的 shell 中进行参数处理
   shift $(($OPTIND - 1))
   echo $1
   ```
+
+------
+
+
+
+## loop
+
+### for
+
+```shell
+```
+
+
+
+### while
+
+```shell
+# shell 中管道 '|' 会创建子 shell，导致变量作用域改变
+# 若要在 `while read` 循环中，修改外部变量
+
+# 1. here-string
+index=0
+while read line; do
+  index=$[index+1]
+done <<< $(cat $file)
+```
 
 
 
@@ -138,7 +164,7 @@ sed -i '/nginx/i New Line' file.txt
 
 # 在第 10 行追加 new.txt 文件内容
 sed -i '20r new.txt' file.txt
- 
+
 # a 在匹配行后面追加一行
 # i 在匹配行前面插入一行
 # r 在匹配行后面追加文件内容
@@ -243,7 +269,7 @@ echo '1,2,3' | awk -v FS="," '{print $1}' # 1
 echo '1 2 3' | awk '{print $0}'                  # 1 2 3
 echo '1 2 3' | awk -v OFS="," '{print $1,$2}'    # 1,2
 # 打印 '$0' 时，为使 'OFS' 生效，需要改变 '$0'，实际上 '$0' 本身没任何改变
-echo '1 2 3' | awk -v OFS="," '{$1=$1;print $0}' # 1,2,3 
+echo '1 2 3' | awk -v OFS="," '{$1=$1;print $0}' # 1,2,3
 ```
 
 - ##### commands
@@ -251,7 +277,7 @@ echo '1 2 3' | awk -v OFS="," '{$1=$1;print $0}' # 1,2,3
   ```shell
   # docker images
   docker images | awk -v OFS=":" '{print $1,$2}'
-  
+
   # docker images (一行展示)
   docker images | awk 'BEGIN{ORS=" ";OFS=":"}{print $1,$2}'
   ```
@@ -276,6 +302,9 @@ cat file.txt | grep '^kind: PrometheusRule'
 grep -n 'apiVersion' tekton.yaml | awk -F ':' '{print $1}'
 # 只打印第一行
 grep -n -m 1 'apiVersion' tekton.yaml | awk -F ':' '{print $1}'
+# 注意: `grep -m 1` 为最多匹配 1 行
+# 若要显示第 3 行, 使用 `grep -m 3 xxx | tail -n 1`, 表示从前三行中选择最后一行
+# 或者使用 `awk`
 ```
 
 ### regex
@@ -380,7 +409,7 @@ echo ${string//substring/replacement}
   # hello word
   ```
 
-  
+
 
 - 去除首尾空格
 
@@ -390,7 +419,7 @@ echo ${string//substring/replacement}
   # space
   ```
 
-  
+
 
 - 字符串行、列处理
 
@@ -400,7 +429,7 @@ echo ${string//substring/replacement}
   # aaa
   ```
 
-  
+
 
 - 字符替换
 
@@ -408,10 +437,22 @@ echo ${string//substring/replacement}
   # 'a,b,c,d,e,f'
   # 只替换一个字符时, 使用 `tr ',' '.'`
   # a.b.c.d.e.f
-  
+
   # 'aabbccddeedd'
   # 字符串替换时, 显示替换后的字符串, 使用 `sed 's/[^a]/a/g'`
   # aaaaaaaaaaaa
+  ```
+
+- 字符串分割
+
+  ```shell
+  # 'a,b,c,d,e,f'
+
+  1. `cut -f1 -d,`
+  # -f1 打印第一个字段
+  # -d, 以 ',' 为分隔符
+
+  2. `awk -F , '{print $1}'`
   ```
 
 
@@ -425,4 +466,3 @@ basename $(echo "https://google.com/xx/xxx") # xxx
 # 截取最后一个 '/' 左边所有字符串, 不包含 '/' 本身
 dirname $(echo "https://google.com/xx/xxx")
 ```
-

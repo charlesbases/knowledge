@@ -28,16 +28,16 @@ go test -coverprofile=cover.out && go tool cover -html=cover.out -o cover.html
   ```shell
   # windows
   CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build .
-  
+
   # linux
   CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build .
-  
+
   # max
   CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build .
   ```
-  
-  
-  
+
+
+
 - ##### -ldflags
 
   ```
@@ -73,7 +73,7 @@ https://zhuanlan.zhihu.com/p/396363069
   go tool pprof -http=:8080 mem.out
   ```
 
-  
+
 
 ------
 
@@ -92,4 +92,3 @@ https://zhuanlan.zhihu.com/p/396363069
 ```shell
 # 使用 map 或 switch case进行情况判断时，map 性能更占优
 ```
-
