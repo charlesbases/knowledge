@@ -120,7 +120,7 @@ sudo vim /etc/docker/daemon.json
   RUN ["executable", "param1", "param2"]
   # RUN ["/bin/bash", "-c", "pwd"]
   
-  # 镜像启动时执行的命令，多个 CMD 只执行最后一个。`docker run` 命令会覆盖 CMD 参数。
+  # 容器启动时执行的命令，多个 CMD 只执行最后一个。`docker run` 命令会覆盖 CMD 参数。
   # 使用 `/bin/sh` 执行
   CMD <command>
   # 使用 `exec` 执行。推荐使用。
@@ -128,7 +128,7 @@ sudo vim /etc/docker/daemon.json
   # 提供给 ENTRYPOINT 的默认参数
   CMD ["param1", "param2"]
   
-  # 容器启动时第一执行的命令及其参数。在 RUN 之前执行。
+  # 容器启动时第一执行的命令及其参数。不会被 `docker run` 命令覆盖
   # 使用 `/bin/sh -c` 执行
   ENTRYPOINT <command>
   # 使用 `exec` 执行，指定其他终端，如: /bin/bash

@@ -1,6 +1,14 @@
 ## 1. gotest
 
-### 1.2. cover
+```shell
+# 运行当前目录下所有测试函数
+go test -v .
+
+# 运行指定函数
+go test -run TestName .
+```
+
+### 1.1. cover
 
 ```shell
 # 简略信息
@@ -9,6 +17,36 @@ go test -cover
 # 详细信息
 go test -coverprofile=cover.out && go tool cover -html=cover.out -o cover.html
 ```
+
+### 1.2. benchmark
+
+```shell
+#
+go test -test.bench=. -test.count=1 -test.benchmem .
+
+# 运行指定的基准测试函数
+```
+
+#### 1.2.1 pprof
+
+```http
+https://zhuanlan.zhihu.com/p/396363069
+```
+
+- ##### graphviz
+
+  ```http
+  https://graphviz.org/download
+  ```
+
+- ##### benchmark
+
+  ```shell
+  go test -test.bench=. -memprofile=mem.out .
+  go tool pprof -http=:8080 mem.out
+  ```
+
+
 
 ------
 
@@ -28,10 +66,10 @@ go test -coverprofile=cover.out && go tool cover -html=cover.out -o cover.html
   ```shell
   # windows
   CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build .
-
+  
   # linux
   CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build .
-
+  
   # max
   CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build .
   ```
@@ -42,35 +80,6 @@ go test -coverprofile=cover.out && go tool cover -html=cover.out -o cover.html
 
   ```
   go build -ldflags '-X main.version=1.0.0'
-  ```
-
-
-
-------
-
-## 3. benchmark
-
-```shell
-go test -test.bench=. -test.count=1 -test.benchmem .
-```
-
-### 3.1 pprof
-
-```http
-https://zhuanlan.zhihu.com/p/396363069
-```
-
-- ##### graphviz
-
-  ```http
-  https://graphviz.org/download
-  ```
-
-- ##### benchmark
-
-  ```shell
-  go test -test.bench=. -memprofile=mem.out .
-  go tool pprof -http=:8080 mem.out
   ```
 
 

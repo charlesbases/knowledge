@@ -64,13 +64,13 @@ fi
       ;;
     esac
   done
-
+  
   # 该命令可以识别 '-a -b -c' 选项。其中 '-a' 需要设置 value，'-b -c' 不需要 value
   # getopts 每次调用时，会将下一个 'opt' 放置在变量中，$OPTARG 可以从 '$*' 中拿到参数值。$OPTARG 是内置变量
   # 第一个 ':' 表示忽略错误
   # a: 表示该 'opt' 需要 value
   # b  表示该 'opt' 不需要 value
-
+  
   # 去除 options 之后的参数, 可以在后面的 shell 中进行参数处理
   shift $(($OPTIND - 1))
   echo $1
@@ -277,7 +277,7 @@ echo '1 2 3' | awk -v OFS="," '{$1=$1;print $0}' # 1,2,3
   ```shell
   # docker images
   docker images | awk -v OFS=":" '{print $1,$2}'
-
+  
   # docker images (一行展示)
   docker images | awk 'BEGIN{ORS=" ";OFS=":"}{print $1,$2}'
   ```
@@ -305,6 +305,16 @@ grep -n -m 1 'apiVersion' tekton.yaml | awk -F ':' '{print $1}'
 # 注意: `grep -m 1` 为最多匹配 1 行
 # 若要显示第 3 行, 使用 `grep -m 3 xxx | tail -n 1`, 表示从前三行中选择最后一行
 # 或者使用 `awk`
+```
+
+```shell
+# 字符串搜索
+grep -nr 'sync.Once' "$(dirname $(which go))/../src"
+# -n 打印行
+# -r 递归地搜索指定目录中的文件和子目录
+
+# 统计行
+grep -nr 'sync.Once' "$(dirname $(which go))/../src" | wc -l
 ```
 
 ### regex
@@ -447,11 +457,11 @@ echo ${string//substring/replacement}
 
   ```shell
   # 'a,b,c,d,e,f'
-
+  
   1. `cut -f1 -d,`
   # -f1 打印第一个字段
   # -d, 以 ',' 为分隔符
-
+  
   2. `awk -F , '{print $1}'`
   ```
 
