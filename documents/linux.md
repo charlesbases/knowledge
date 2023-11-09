@@ -549,6 +549,33 @@ reboot
 
 ------
 
+## find
+
+```shell
+# 递归显示文件夹下所有子文件夹及其目录
+find . -print
+
+# 只显示文件夹
+find . -type d -print
+
+# 只显示文件
+find . -type f -print
+
+# 排除文件夹
+find -name .git -prune -o -type f -print
+find -name .git -prune -o -name .idea -prune -o -type f -print
+
+# `-print`  显示匹配项到标准输出
+# `-type d` 显示文件夹
+# `-type f` 显示文件
+# `-name .git -prune` 排除名称为 '.git' 的文件夹
+# `-o` 或，用于连接多个表达式
+```
+
+
+
+---
+
 ## nohup
 
 ```shell
@@ -765,6 +792,7 @@ sudo apt install sudo vim git zsh wget curl make htop lsof tree expect net-tools
 # -z 通过 gzip 命令处理文件
 # -v 显示执行过程
 # -f 指定文件
+# -C 输出文件夹路径
 ```
 
 ```shell
@@ -784,7 +812,7 @@ tar -zcvf demo.tar.gz demo
 tar -xvf demo.tar
 
 # *.tar.gz | *.tgz
-tar -zxvf demo.tar.gz
+tar -zxvf demo.tar.gz -C demo
 
 # *.tar.bz2
 tar -jxvf demo.tar.bz2
@@ -1126,7 +1154,7 @@ rustup self uninstall
 ## golang
 
 ```shell
-wget -c https://dl.google.com/go/go1.18.9.linux-amd64.tar.gz -O - | sudo tar -xz -C /usr/local
+wget -c https://golang.google.cn/dl/go1.20.10.linux-amd64.tar.gz -O - | sudo tar -xz -C /usr/local
 
 ···
 export PATH="$PATH:/usr/local/bin"
@@ -1150,7 +1178,7 @@ sudo chown $USER /opt/go/*
 sudo apt install -y wget build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev libbz2-dev
 
 # Python3
-ver=3.10.7
+ver=3.12.0
 wget -c https://www.python.org/ftp/python/$ver/Python-$ver.tgz && tar -xvf Python-$ver.tgz
 cd Python-$ver
 ./configure --enable-optimizations --prefix=/usr/local/python3
@@ -1161,19 +1189,18 @@ sudo make altinstall
 sudo ln -s /usr/local/python3/bin/python3.10 /usr/local/bin/python3
 sudo ln -s /usr/local/python3/bin/pip3.10 /usr/local/bin/pip3
 
-# Pip 加速
-mkdir $HOME/.pip && cat > $HOME/.pip/pip.config << EOF
-[global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-[install]
-trusted-host = mirrors.aliyun.com
-EOF
+# pip 换源
+# pypi.org
+pip config set global.index-url https://pypi.org/simple
+pip config set global.trusted pypi.org
+# douban
+pip config set global.index-url https://pypi.douban.com/simple
+pip config set global.trusted pypi.douban.com
 
 # 第三方依赖
 black ····· 代码格式化工具
-request ··· HTTP 封装
 pymysql ··· 操作 MySQL
-
+requests ·· HTTP 封装
 ```
 
 

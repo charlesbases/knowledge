@@ -78,11 +78,29 @@ https://zhuanlan.zhihu.com/p/396363069
 
 - ##### -ldflags
 
-  ```
-  go build -ldflags '-X main.version=1.0.0'
+  ```shell
+  # 减小编译后体积
+  go build -ldflags "-s -w" -o main main.go
+  # -s 忽略符号表和调试信息
+  # -w 忽略 DWARFv3 调试信息，使用该选项后将无法使用 gdb 进行调试
+  
+  # 使用当前时间作为版本号
+  go build -ldflags "-s -w -X main.version=$(date +'%Y%m%d%H%M%S')" -o main main.go
+  # 使用当前 git-hash 作为版本号
+  go build -ldflags "-s -w -X main.version=$(git rev-parse --short HEAD)" -o main main.go
   ```
 
 
+
+------
+
+## 3. tools
+
+### goimports
+
+```shell
+go install golang.org/x/tools/cmd/goimports@latest
+```
 
 ------
 

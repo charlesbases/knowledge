@@ -80,6 +80,43 @@ fi
 
 
 
+## select
+
+```shell
+# 简单菜单的控制结构
+
+# select 菜单的提示语，会在展示菜单后打印
+PS3="请选择一个选项: "
+
+select opt in "a" "b" "c" "quit"; do
+  case $opt in
+    "a")
+    echo "a"
+    break
+    ;;
+    "b")
+    echo "b"
+    break
+    ;;
+    "c")
+    echo "c"
+    break
+    ;;
+    "quit")
+    exit
+    ;;
+    *)
+    echo "invalid input"
+    exit
+    ;;
+  esac
+done
+```
+
+
+
+------
+
 ## loop
 
 ### for
