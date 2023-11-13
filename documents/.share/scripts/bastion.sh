@@ -4,16 +4,6 @@ set -e
 
 repo=$HOME/.remote
 
-list=(
-# IP User Passwd Remark
-# kubernetes
-"192.168.10.10 user password develop-10"
-"192.168.10.11 user password develop-11"
-"192.168.10.12 user password develop-12 user@192.168.10.10"
-)
-
-length=${#list[@]}
-
 help() {
   echo """\
 usage:
