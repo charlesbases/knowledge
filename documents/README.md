@@ -29,10 +29,10 @@
   ```shell
   # new tag
   git tag -a "v1.0.0" -m "release v1.0.0"
-  
+
   # push
   git push --tags
-  
+
   #
   v=v1.0.0; git tag -a "$v" -m "release $v" && git push --tags
   ```
@@ -42,12 +42,12 @@
   ```shell
   # 删除本地
   git tag -d v1.0.0
-  
+
   # 删除远程
   git push origin :refs/tags/v1.0.0
-  
+
   #
-  v=v1.0.0; git tag -d $v && git push origin :refs/tags/$v	
+  v=v1.0.0; git tag -d $v && git push origin :refs/tags/$v
   ```
 
 ---
@@ -82,10 +82,10 @@ git branch --set-upstream-to=<remote-branch> <local-branch>
   ```shell
   # 本地分支
   git branch -d branch
-  
+
   # 远程分支
   git push origin -d branch
-  
+
   #
   b=branch; git push origin --delete $b && git branch -d $b
   ```
@@ -111,13 +111,13 @@ git branch --set-upstream-to=<remote-branch> <local-branch>
   ```shell
   # 删除 git 缓存
   git rm --cached [module]
-  
+
   # 删除 .gitmodules 子模块信息
   [submodule "module"]
-  
+
   # 删除 .git/config 子模块信息
   [submodule "module"]
-  
+
   # 删除 .git 子模块文件
   rm -rf .git/modules/[model]
   ```
@@ -133,7 +133,7 @@ git branch --set-upstream-to=<remote-branch> <local-branch>
 - ##### vimrc
 
   ```shell
-  
+
   ```
 
 - ##### inputrc
@@ -142,7 +142,7 @@ git branch --set-upstream-to=<remote-branch> <local-branch>
   sed -i -s 's/set bell-style visible/set bell-style none/g' inputrc
   ```
 
-  
+
 
 - ##### profile.d
 
@@ -237,13 +237,13 @@ fi
       ;;
     esac
   done
-  
+
   # 该命令可以识别 '-a -b -c' 选项。其中 '-a' 需要设置 value，'-b -c' 不需要 value
   # getopts 每次调用时，会将下一个 'opt' 放置在变量中，$OPTARG 可以从 '$*' 中拿到参数值。$OPTARG 是内置变量
   # 第一个 ':' 表示忽略错误
   # a: 表示该 'opt' 需要 value
   # b  表示该 'opt' 不需要 value
-  
+
   # 去除 options 之后的参数, 可以在后面的 shell 中进行参数处理
   shift $(($OPTIND - 1))
   echo $1
@@ -253,10 +253,10 @@ fi
 
   ```shell
   # 简单菜单的控制结构
-  
+
   # select 菜单的提示语，会在展示菜单后打印
   PS3="请选择一个选项: "
-  
+
   select opt in "a" "b" "c" "quit"; do
     case $opt in
       "a")
@@ -293,7 +293,7 @@ fi
   ```shell
   # shell 中管道 '|' 会创建子 shell，导致变量作用域改变
   # 若要在 `while read` 循环中，修改外部变量
-  
+
   # 1. here-string
   index=0
   while read line; do
@@ -637,11 +637,11 @@ echo ${string//substring/replacement}
 
   ```shell
   # 'a,b,c,d,e,f'
-  
+
   1. `cut -f1 -d,`
   # -f1 打印第一个字段
   # -d, 以 ',' 为分隔符
-  
+
   2. `awk -F , '{print $1}'`
   ```
 
@@ -667,7 +667,7 @@ dirname $(echo "https://google.com/xx/xxx")
 
   ```shell
   # 快捷键
-  
+
   # G:  跳至文本最后一行
   # gg: 跳至文本首行
   # $:  跳至当前行最后一个字符
@@ -700,8 +700,8 @@ Host 192.168.0.1
   ServerAliveInterval 120
   # 服务端未收到客户端相应的空包的最大次数，就会关闭连接
   # 超时时间为 ServerAliveInterval * ServerAliveCountMax
-  ServerAliveCountMax 720 
-  IdentityFile ~/.ssh/is_rsa  
+  ServerAliveCountMax 720
+  IdentityFile ~/.ssh/is_rsa
   PreferredAuthentications publickey
 EOF
 ```
@@ -720,7 +720,7 @@ EOF
     IdentityFile ~/.ssh/is_rsa
     PreferredAuthentications publickey
   EOF
-  
+
   ## 正则匹配
   cat > $HOME/.ssh/config << EOF
   Host 192.168.0.*
@@ -731,14 +731,14 @@ EOF
   EOF
   ```
 
-  
+
 
 ---
 
 ### tar
 
 ```shell
-# -c 建立新的备份文件(压缩) 
+# -c 建立新的备份文件(压缩)
 # -x 从备份文件中还原文件(解压)
 # -z 通过 gzip 命令处理文件
 # -v 显示执行过程
@@ -783,14 +783,14 @@ unzip -d demo demo.zip
 
   ```shell
   apt install nfs-kernel-server -y
-  
+
   # 设置挂载目录
   mkdir -p /data/nfs
   chmod a+w /data/nfs
   cat >> /etc/exports << EOF
   /data/nfs 192.168.1.0/24(rw,sync,no_subtree_check,no_root_squash)
   EOF
-  
+
   # ro: 以只读方式挂载
   # rw: 赋予读写权限
   # sync: 同步检查
@@ -798,11 +798,11 @@ unzip -d demo demo.zip
   # subtree_check: 验证文件路径
   # no_subtree_check: 不验证文件路径
   # no_root_squash: (危险项) 客户端 root 拥有服务端 root 权限
-  
+
   # 启动服务
   sudo sh -c 'systemctl enable rpcbind && systemctl start rpcbind'
   sudo sh -c 'systemctl enable nfs-kernel-server && systemctl start nfs-kernel-server'
-  
+
   # 查看
   showmount -e
   ```
@@ -811,22 +811,22 @@ unzip -d demo demo.zip
 
   ```shell
   apt install nfs-common -y
-  
+
   # 创建 nfs 共享目录
   sudo mkdir -p /data/nfs
-  
+
   # 连接 nfs 服务器
   cat >> /etc/fstab << EOF
   # nfs-server
   192.168.1.10:/data/nfs /data/nfs nfs4 defaults,user,exec 0 0
   EOF
-  
+
   #
   sudo mount -a
-  
+
   # 启动服务
   sudo sh -c 'systemctl enable rpcbind && systemctl start rpcbind'
-  
+
   # 查看
   df -h
   ```
@@ -846,7 +846,7 @@ vim /etc/ssh/sshd_config
 PermitRootLogin yes
 ···
 
-# 
+#
 sh -c 'echo "PermitRootLogin yes" >> /etc/ssh/sshd_config'
 
 # 取消倒计时
@@ -979,7 +979,7 @@ rsync -a source user@remote:destination
 # -a 递归；保存文件信息，包括时间、权限等
 # -r 递归
 # -z 传输时使用数据传输
-# --delete 从 'destination' 删除 'source' 中不存在的文件 
+# --delete 从 'destination' 删除 'source' 中不存在的文件
 ```
 
 ---
@@ -1057,15 +1057,15 @@ cat /etc/resolv.conf
   ...
   - [main]
   ...
-  
+
   # 修改配置
   sudo sh -c """cat > /etc/NetworkManager/conf.d/no-dns.conf << EOF
   [main]
   dns=none
   EOF
-  
+
   systemctl restart NetworkManager.service
-  
+
   rm -rf /etc/resolv.conf
   echo "nameserver 192.168.1.1" > /etc/resolv.conf
   """
@@ -1163,7 +1163,7 @@ echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 
   ```
   sudo apt install -y bash-completion
-  
+
   cat >> ~/.bashrc << EOF
   source /usr/share/bash-completion/bash_completion
   source <(kubectl completion bash)
@@ -1186,9 +1186,9 @@ sed -i -s "s/robbyrussell/ys/g" $HOME/.zshrc && source $HOME/.zshrc
 
   ```shell
   dircolors >> ~/.zshrc
-  
+
   sed -s -i 's/ow=34;42/ow=34/' ~/.zshrc
-  
+
   # 修改 ow=34;42 ==> ow=34
   # 30: 黑色前景
   # 34: 蓝色前景
@@ -1207,17 +1207,17 @@ sed -i -s "s/robbyrussell/ys/g" $HOME/.zshrc && source $HOME/.zshrc
     done
     unset i
   fi
-  
+
   # export
   set completion-ignore-case on
   export TERM=xterm-256color
   export TIME_STYLE="+%Y-%m-%d %H:%M:%S"
-  
+
   # alias
   alias l="ls -lh"
   alias la="ls -Alh"
   alias his="history -i"
-  
+
   EOF
   ```
 
@@ -1248,17 +1248,17 @@ EOF
   .:53 {
     hosts {
       192.168.1.1 coredns.com
-  
+
       ttl 5
       fallthrough
     }
-  
+
     # 未匹配的域名转发到上游 DNS 服务器
     forward . 192.168.1.1
-  
+
     errors
     log stdout
-    
+
     cache 60
     reload 3s
   }
@@ -1349,7 +1349,7 @@ ExecStopPost=[shell]
 #   oneshot: 类似于simple，但只执行一次，Systemd 会等它执行完，才启动其他服务
 #   dbus: 类似于simple，但会等待 D-Bus 信号后启动
 #   notify: 类似于simple，启动结束后会发出通知信号，然后 Systemd 再启动其他服务
-#   idle: 类似于simple，但是要等到其他任务都执行完，才会启动该服务。一种使用场合是为让该服务的输出，不与其他服务的输出相混合 
+#   idle: 类似于simple，但是要等到其他任务都执行完，才会启动该服务。一种使用场合是为让该服务的输出，不与其他服务的输出相混合
 Type=simple
 
 # KillMode 如何停止服务
@@ -1401,32 +1401,32 @@ WantedBy=[表示该服务所在的Target]
     ```shell
     # 备份
     sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
-    
+
     ···
     # cqu
     http://mirrors.cqu.edu.cn
-    
+
     # ustc
     http://mirrors.ustc.edu.cn
-    
+
     # aliyun
     http://mirrors.aliyun.com
-    
+
     # tsinghua
     http://mirrors.tuna.tsinghua.edu.cn
     ···
-    
+
     ··· Debian 11
     deb http://mirrors.aliyun.com/debian/ bullseye main
     # deb-src http://mirrors.aliyun.com/debian/ bullseye main
     deb http://mirrors.aliyun.com/debian/ bullseye-updates main
     # deb-src http://mirrors.aliyun.com/debian/ bullseye-updates main
-    deb http://mirrors.aliyun.com/debian/ bullseye-backports main 
-    # deb-src http://mirrors.aliyun.com/debian/ bullseye-backports main 
+    deb http://mirrors.aliyun.com/debian/ bullseye-backports main
+    # deb-src http://mirrors.aliyun.com/debian/ bullseye-backports main
     deb http://mirrors.aliyun.com/debian-security bullseye-security main
     # deb-src http://mirrors.aliyun.com/debian-security bullseye-security main
     ···
-    
+
     apt update -y
     ```
 
@@ -1444,40 +1444,40 @@ WantedBy=[表示该服务所在的Target]
   ```shell
   # 完整版
   # 模拟 HTTPS 厂商生产 HTTPS 证书过程，HTTPS 证书厂商一般都会有一个根证书（3、4、5），实际申请中，该操作用户不可见。通常用户只需将服务器公钥与服务器证书申请文件交给 HTTPS 厂商即可，之后 HTTPS 厂商会邮件回复一个服务器公钥证书，拿到这个服务器公钥证书与自生成的服务器私钥就可搭建 HTTPS 服务
-  
+
   # 1. 生成服务器私钥
   openssl genrsa -out server.key 2048
-  
+
   # 2. 生成服务器证书申请文件
   openssl req -new -key server.key -out server.csr
-  
+
   # 3. 生成 CA 机构私钥
   openssl genrsa -out ca.key 2048
-  
+
   # 4. 生成 CA 机构证书请求文件
   openssl req -new -key ca.key -out ca.csr
-  
+
   # 5. 生成 CA 机构根证书（自签名证书）
   openssl x509 req -signkey ca.key -in ca.csr -out ca.crt
-  
+
   # 6. 生成服务器证书（公钥证书）
   openssl x509 -req -CA ca.crt -CAkey ca.key -CAcreateserial -in server.csr -out server.crt
   ```
 
-  
+
 
 - ##### simplify
 
   ```shell
   # 精简版
   # 本地 HTTPS 测试，既是用户角色也是 HTTPS 厂商角色
-  
+
   # 1. 生成服务器私钥
   openssl genrsa -out server.key 2048
-  
+
   # 2. 生成服务器证书申请文件
   openssl req -nodes -noout -new -key server.key -out server.csr
-  
+
   # 3. 生成服务器证书
   openssl x509 -req -signkey server.key -in server.csr -out server.crt -days 3650
   ```
@@ -1752,7 +1752,7 @@ cat >> ~/.zshrc << EOF
 export PATH="$PATH:$GOHOME/bin:$GOPATH/bin"
 EOF
 
-# 
+#
 sudo mkdir -p $GOPATH/{bin,pkg,src}
 ```
 
@@ -1824,10 +1824,10 @@ https://zhuanlan.zhihu.com/p/396363069
   ```shell
   # windows
   CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build .
-  
+
   # linux
   CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build .
-  
+
   # max
   CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build .
   ```
@@ -1839,7 +1839,7 @@ https://zhuanlan.zhihu.com/p/396363069
   go build -ldflags "-s -w" -o main main.go
   # -s 忽略符号表和调试信息
   # -w 忽略 DWARFv3 调试信息，使用该选项后将无法使用 gdb 进行调试
-  
+
   # 使用当前时间作为版本号
   go build -ldflags "-s -w -X main.version=$(date +'%Y%m%d%H%M%S')" -o main main.go
   # 使用当前 git-hash 作为版本号
@@ -1891,10 +1891,10 @@ sudo ln -s /usr/local/node/bin/pnpm /usr/local/bin/
   ```shell
   # --incognito
   # 隐身模式启动
-  
+
   # --ignore-certificate-errors
   # 忽略证书错误
-  
+
   # --disable-background-networking
   # 禁用版本检查
   ```
@@ -1906,7 +1906,7 @@ sudo ln -s /usr/local/node/bin/pnpm /usr/local/bin/
   4.11.1
   ```
 
-  
+
 
 ---
 
@@ -1956,7 +1956,7 @@ mklink /D "C:\Program Files\CCleaner" "D:\CCleaner"
 
   ```shell
   start "" .
-  
+
   # alias open='start ""'
   ```
 
@@ -1964,7 +1964,7 @@ mklink /D "C:\Program Files\CCleaner" "D:\CCleaner"
 
   ```shell
   start "" "D:\JetBrains\GoLand\bin\goland64.exe" .
-  
+
   # alias goland='start "" "D:\JetBrains\GoLand\bin\goland64.exe"'
   ```
 
