@@ -42,10 +42,10 @@
   ```shell
   # 删除本地
   git tag -d v1.0.0
-
+  
   # 删除远程
   git push origin :refs/tags/v1.0.0
-
+  
   #
   v=v1.0.0; git tag -d $v && git push origin :refs/tags/$v
   ```
@@ -82,10 +82,10 @@ git branch --set-upstream-to=<remote-branch> <local-branch>
   ```shell
   # 本地分支
   git branch -d branch
-
+  
   # 远程分支
   git push origin -d branch
-
+  
   #
   b=branch; git push origin --delete $b && git branch -d $b
   ```
@@ -111,13 +111,13 @@ git branch --set-upstream-to=<remote-branch> <local-branch>
   ```shell
   # 删除 git 缓存
   git rm --cached [module]
-
+  
   # 删除 .gitmodules 子模块信息
   [submodule "module"]
-
+  
   # 删除 .git/config 子模块信息
   [submodule "module"]
-
+  
   # 删除 .git 子模块文件
   rm -rf .git/modules/[model]
   ```
@@ -253,10 +253,10 @@ fi
 
   ```shell
   # 简单菜单的控制结构
-
+  
   # select 菜单的提示语，会在展示菜单后打印
   PS3="请选择一个选项: "
-
+  
   select opt in "a" "b" "c" "quit"; do
     case $opt in
       "a")
@@ -293,7 +293,7 @@ fi
   ```shell
   # shell 中管道 '|' 会创建子 shell，导致变量作用域改变
   # 若要在 `while read` 循环中，修改外部变量
-
+  
   # 1. here-string
   index=0
   while read line; do
@@ -637,11 +637,11 @@ echo ${string//substring/replacement}
 
   ```shell
   # 'a,b,c,d,e,f'
-
+  
   1. `cut -f1 -d,`
   # -f1 打印第一个字段
   # -d, 以 ',' 为分隔符
-
+  
   2. `awk -F , '{print $1}'`
   ```
 
@@ -720,7 +720,7 @@ EOF
     IdentityFile ~/.ssh/is_rsa
     PreferredAuthentications publickey
   EOF
-
+  
   ## 正则匹配
   cat > $HOME/.ssh/config << EOF
   Host 192.168.0.*
@@ -811,29 +811,177 @@ unzip -d demo demo.zip
 
   ```shell
   apt install nfs-common -y
-
+  
   # 创建 nfs 共享目录
   sudo mkdir -p /data/nfs
-
+  
   # 连接 nfs 服务器
   cat >> /etc/fstab << EOF
   # nfs-server
   192.168.1.10:/data/nfs /data/nfs nfs4 defaults,user,exec 0 0
   EOF
-
+  
   #
   sudo mount -a
-
+  
   # 启动服务
   sudo sh -c 'systemctl enable rpcbind && systemctl start rpcbind'
-
+  
   # 查看
   df -h
   ```
 
 ---
 
-### [wrk](.share/wrk.mhtml)
+### [wrk](https://www.cnblogs.com/quanxiaoha/p/10661650.html)
+
+- ##### install
+
+  - ##### mac
+
+    ```shell
+    brew install wrk
+    ```
+
+  - ##### linux
+
+    ```shell
+    # lib
+    sudo apt install git libssl-dev build-essential -y
+    
+    # wrk
+    git clone https://github.com/wg/wrk.git wrk
+    cd wrk
+    make
+    sudo mv wrk /usr/bin/wrk
+    sudo chown root:root /usr/bin/wrk
+    ```
+
+- ##### options
+
+  ```shell
+  Usage: wrk <options> <url>
+    Options:
+      -c, --connections <N>  # 单线程与服务器建立并保持 TCP 连接数量
+      -d, --duration    <T>  # 压测时间
+      -t, --threads     <N>  # 压测线程数
+  
+      -s, --script      <S>  # 指定 lua 脚本路径
+      -H, --header      <H>  # Add header to request
+          --latency          # 压测结束后，打印延迟统计信息
+          --timeout     <T>  # 连接超时时间
+      -v, --version          # wrk 版本信息
+  
+    <N> 代表数字参数，支持国际单位 (1k, 1M, 1G)
+    <T> 代表时间参数，支持时间单位 (2s, 2m, 2h)
+  ```
+
+  ```shell
+  # -t: 推荐设置为压测机器 CPU 核心数的 2-4 倍
+  # 实际压测连接总数为：connections * threads
+  ```
+
+- ##### report
+
+  ```shell
+  # wrk -t 32 -c 100 -d 30s --latency http://10.63.3.11:30080/swagger/index.html
+  
+  Running 30s test @ http://10.63.3.11:30080/swagger/index.html
+    32 threads and 100 connections
+  
+    Thread Stats   Avg      Stdev     Max    +/- Stdev
+  #  	状态        平均值     标准差    最大值  正负标准差所占比例
+      Latency    24.49ms   29.51ms 201.67ms   78.78%
+  #   延迟
+      Req/Sec    292.77    138.20    1.86k    72.88%
+  #   每秒请求数
+  
+    Latency Distribution # 延迟分布
+       50%    4.69ms
+       75%   47.67ms
+       90%   73.86ms
+       99%   90.83ms
+    280671 requests in 30.09s, 1.01GB read # 30.09s 内处理了 280671 次请求，耗费流量 1.01GB
+  Requests/sec:   9326.66   # QPS. 每秒评价处理请求 9326.66
+  Transfer/sec:     34.53MB # 平均每秒流量 34.53MB
+  ```
+
+- ##### script
+
+  - ##### local
+
+    ```lua
+    -- 全局变量
+    wrk = {
+      scheme  = "http",
+      host    = "localhost",
+      port    = 8080,
+      method  = "GET",
+      path    = "/",
+      headers = {},
+      body    = nil,
+      thread  = <userdata>,
+    }
+    
+    -- 全局方法
+    wrk.format(method, path, headers, body) -- 根据参数和全局变量 `wrk`， 生成 HTTP request 字符串
+    wrk.lookup(host, service)               -- 返回所有可用的服务器地址信息
+    wrk.connect(addr)                       -- test connect
+    ```
+
+  - ##### api
+
+    ```lua
+    -- 启动阶段
+    function setup(thread)
+    
+    -- 运行阶段
+    function init(args)
+    function delay()    -- 每次发送请求前调用，可用来定制延迟时间
+    function request()  -- 用来生成请求，每一次请求都会先调用此方法
+    function response(status, headers, body) -- 在收到每一个相应后调用
+    
+    -- 结束阶段
+    function done(summary, latency, request) -- 在整个测试过程中只会调用一次，可以生成定制化的测试报告
+    ```
+
+  - ##### demo
+
+    ```lua
+    -- 自定义请求参数
+    wrk.headers["Content-Type"] = "application/json"
+    
+    request = function()
+        id = math.random(1, 100000)
+        path = "/api?id=" .. id
+        return wrk.format("GET", path)
+    end
+    ```
+
+    ```lua
+    -- 每次请求前延迟 10ms
+    delay = function()
+        return 10
+    end
+    ```
+
+    ```lua
+    -- 先认证，后请求
+    token = nil
+    path = "/api/login"
+    
+    request = function()
+        return wrk.format("GET", path)
+    end
+    
+    response = function(status, headers, body)
+        if not token and status == 200 then
+            token = headers["Authorization"]
+            path = "api/user/list"
+            wrk.headers["Authorization"] = token
+        end
+    end
+    ```
 
 ---
 
@@ -1057,15 +1205,15 @@ cat /etc/resolv.conf
   ...
   - [main]
   ...
-
+  
   # 修改配置
   sudo sh -c """cat > /etc/NetworkManager/conf.d/no-dns.conf << EOF
   [main]
   dns=none
   EOF
-
+  
   systemctl restart NetworkManager.service
-
+  
   rm -rf /etc/resolv.conf
   echo "nameserver 192.168.1.1" > /etc/resolv.conf
   """
@@ -1163,7 +1311,7 @@ echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 
   ```
   sudo apt install -y bash-completion
-
+  
   cat >> ~/.bashrc << EOF
   source /usr/share/bash-completion/bash_completion
   source <(kubectl completion bash)
@@ -1207,17 +1355,17 @@ sed -i -s "s/robbyrussell/ys/g" $HOME/.zshrc && source $HOME/.zshrc
     done
     unset i
   fi
-
+  
   # export
   set completion-ignore-case on
   export TERM=xterm-256color
   export TIME_STYLE="+%Y-%m-%d %H:%M:%S"
-
+  
   # alias
   alias l="ls -lh"
   alias la="ls -Alh"
   alias his="history -i"
-
+  
   EOF
   ```
 
@@ -1248,17 +1396,17 @@ EOF
   .:53 {
     hosts {
       192.168.1.1 coredns.com
-
+  
       ttl 5
       fallthrough
     }
-
+  
     # 未匹配的域名转发到上游 DNS 服务器
     forward . 192.168.1.1
-
+  
     errors
     log stdout
-
+  
     cache 60
     reload 3s
   }
@@ -1401,21 +1549,21 @@ WantedBy=[表示该服务所在的Target]
     ```shell
     # 备份
     sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
-
+    
     ···
     # cqu
     http://mirrors.cqu.edu.cn
-
+    
     # ustc
     http://mirrors.ustc.edu.cn
-
+    
     # aliyun
     http://mirrors.aliyun.com
-
+    
     # tsinghua
     http://mirrors.tuna.tsinghua.edu.cn
     ···
-
+    
     ··· Debian 11
     deb http://mirrors.aliyun.com/debian/ bullseye main
     # deb-src http://mirrors.aliyun.com/debian/ bullseye main
@@ -1426,7 +1574,7 @@ WantedBy=[表示该服务所在的Target]
     deb http://mirrors.aliyun.com/debian-security bullseye-security main
     # deb-src http://mirrors.aliyun.com/debian-security bullseye-security main
     ···
-
+    
     apt update -y
     ```
 
@@ -1444,22 +1592,22 @@ WantedBy=[表示该服务所在的Target]
   ```shell
   # 完整版
   # 模拟 HTTPS 厂商生产 HTTPS 证书过程，HTTPS 证书厂商一般都会有一个根证书（3、4、5），实际申请中，该操作用户不可见。通常用户只需将服务器公钥与服务器证书申请文件交给 HTTPS 厂商即可，之后 HTTPS 厂商会邮件回复一个服务器公钥证书，拿到这个服务器公钥证书与自生成的服务器私钥就可搭建 HTTPS 服务
-
+  
   # 1. 生成服务器私钥
   openssl genrsa -out server.key 2048
-
+  
   # 2. 生成服务器证书申请文件
   openssl req -new -key server.key -out server.csr
-
+  
   # 3. 生成 CA 机构私钥
   openssl genrsa -out ca.key 2048
-
+  
   # 4. 生成 CA 机构证书请求文件
   openssl req -new -key ca.key -out ca.csr
-
+  
   # 5. 生成 CA 机构根证书（自签名证书）
   openssl x509 req -signkey ca.key -in ca.csr -out ca.crt
-
+  
   # 6. 生成服务器证书（公钥证书）
   openssl x509 -req -CA ca.crt -CAkey ca.key -CAcreateserial -in server.csr -out server.crt
   ```
@@ -1618,6 +1766,20 @@ firewall-cmd --zone=public --remove-port=8080/tcp --permanent
 # 查看端口列表
 firewall-cmd --zone=public --list-ports
 ```
+
+---
+
+### resources
+
+- ##### cpu
+
+  ```shell
+  # cpu 核心数
+  nproc
+  
+  # cpu 详细信息
+  lscpu
+  ```
 
 ---
 
@@ -1839,7 +2001,7 @@ https://zhuanlan.zhihu.com/p/396363069
   go build -ldflags "-s -w" -o main main.go
   # -s 忽略符号表和调试信息
   # -w 忽略 DWARFv3 调试信息，使用该选项后将无法使用 gdb 进行调试
-
+  
   # 使用当前时间作为版本号
   go build -ldflags "-s -w -X main.version=$(date +'%Y%m%d%H%M%S')" -o main main.go
   # 使用当前 git-hash 作为版本号

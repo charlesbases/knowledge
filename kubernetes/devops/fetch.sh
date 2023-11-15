@@ -2,6 +2,11 @@
 
 set -e
 
+root="yaml"
+rm -rf $root
+mkdir $root >/dev/null 2>&1
+cd $root
+
 version_argocd=v2.3.17
 version_tekton_pipeline=v0.46.0
 version_tekton_dashboard=v0.34.0
@@ -15,9 +20,6 @@ files=(
 "https://raw.githubusercontent.com/argoproj/argo-cd/$version_argocd/manifests/install.yaml argocd.yaml"
 )
 
-> argocd.yaml
-> tekton.yaml
-
 for (( i = 0; i < ${#files[@]}; i++ )); do
   args=(${files[i]})
 
@@ -25,7 +27,7 @@ for (( i = 0; i < ${#files[@]}; i++ )); do
 done
 
 # argocd
-cat argocd-custom.yaml >> argocd.yaml
+cat ../argocd-custom.yaml >> argocd.yaml
 
 # rekton
-cat tekton-custom.yaml >> tekton.yaml
+cat ../tekton-custom.yaml >> tekton.yaml

@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+root="yaml"
+if [[ ! -d $root ]]; then
+  echo "$root: No such file or directory"
+  exit
+fi
+cd $root
+
 help() {
   echo """
 Usage:

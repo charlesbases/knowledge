@@ -12,9 +12,6 @@
 
 version=v0.46.0
 wget -O - https://storage.googleapis.com/tekton-releases/pipeline/previous/$version/release.yaml >> tekton.yaml
-
-# 注释掉 'kind: Namespace', 改为手动创建。防止卸载时 ns 删除失败
-ls *.yaml | while read file; do line=$(grep -n '^kind: Namespace' $file | awk -F ':' '{print $1}');  if [[ $line ]]; then echo "$file:$line"; fi; done
 ```
 
 #### 1.1.2. dashboard
@@ -25,6 +22,14 @@ ls *.yaml | while read file; do line=$(grep -n '^kind: Namespace' $file | awk -F
 
 version=v0.34.0
 wget -O https://github.com/tektoncd/dashboard/releases/download/$version/release.yaml >> tekton.yaml
+```
+
+```shell
+# 注释掉 'kind: Namespace', 改为手动创建。防止卸载时 ns 删除失败
+ls *.yaml | while read file; do line=$(grep -n '^kind: Namespace' $file | awk -F ':' '{print $1}');  if [[ $line ]]; then echo "$file:$line"; fi; done
+
+# namespace
+kubectl create namespace devops
 ```
 
 ### 1.2. documents
