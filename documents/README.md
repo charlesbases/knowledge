@@ -57,6 +57,11 @@
 ```shell
 # git pull 下载小文件时，禁用 gzip  来提高下载速度
 git clone -c core.compression=0 <repo.url>
+
+# '-c core.compression=0' 禁用 gzip
+# '-b master'
+# '--single-branch' 只拉取指定分支
+# '--depth 1'       只拉取最新的提交记录
 ```
 
 ---
