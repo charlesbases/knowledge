@@ -686,7 +686,7 @@ ufw enable
 ufw allow ssh
 
 # ssh 密钥生成
-ssh-keygen -t rsa -b 2048 -C "zhiming.sun"
+ssh-keygen -t rsa -b 2048 -C "zhiming.sun" -f id_rsa
 
 # ssh 免密
 ssh-copy-id -i $HOME/.ssh/id_rsa.pub user@ip
@@ -1086,6 +1086,28 @@ find -name .git -prune -o -name .idea -prune -o -type f -print
 # `-type f` 显示文件
 # `-name .git -prune` 排除名称为 '.git' 的文件夹
 # `-o` 或，用于连接多个表达式
+```
+
+---
+
+### date
+
+```shell
+# %Y 年份. 2006
+# %m 月份. 01-12
+# %d 日期. 01-31
+# %H 小时. 00-23
+# %M 分钟. 00-60
+# %S 秒.   00-60
+# %j 一年中的第几天. (001-366)
+# %U 一年中的第几周. 从周日开始计算. (00-53)
+# %W 一年中的第几周. 从周一开始计算. (00-53)
+# %s 从 1970-01-01 00:00:00 UTC 起的秒数
+```
+
+```shell
+# date +"%Y-%m-%d %H:%M:%S"
+# date +"%Y%m%d%H%M%S"
 ```
 
 ---

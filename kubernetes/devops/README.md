@@ -26,7 +26,7 @@ wget -O https://github.com/tektoncd/dashboard/releases/download/$version/release
 
 ```shell
 # 注释掉 'kind: Namespace', 改为手动创建。防止卸载时 ns 删除失败
-ls *.yaml | while read file; do line=$(grep -n '^kind: Namespace' $file | awk -F ':' '{print $1}');  if [[ $line ]]; then echo "$file:$line"; fi; done
+ls *yaml | while read file; do grep -n '^kind: Namespace' $file | awk -F ':' '{print $1}' | while read line; do echo $file:$line; done; done
 
 # namespace
 kubectl create namespace devops
@@ -311,7 +311,7 @@ spec:
 	# 目标集群 url
     server: '*'
     # 是否禁用目标集群的 SSL/TLS 验证
-    insecure: 'true' 
+    insecure: 'true'
   clusterResourceWhitelist:
   - group: '*'
     kind: '*'
@@ -422,7 +422,7 @@ grep -n 'argocd-notifications' argocd.yaml | grep -v '#' | awk -F ':' '{print $1
   - ##### tekton
 
     ```shell
-    
+
     ```
 
   - ##### argocd
@@ -435,7 +435,7 @@ grep -n 'argocd-notifications' argocd.yaml | grep -v '#' | awk -F ':' '{print $1
     ...
     kind: StatefulSet
     ...
-    
+
     # 取消 volumes 挂载
     grep -n '^      serviceAccountName: argocd-server' argocd.yaml | awk -F ':' '{print $1}' | while read line; do echo argocd.yaml:$[line+1]; done
     # yaml
@@ -444,7 +444,7 @@ grep -n 'argocd-notifications' argocd.yaml | grep -v '#' | awk -F ':' '{print $1
     #      - emptyDir: { }
     #        name: plugins-home
     ...
-    
+
     # 添加 serviceName、volumeClaimTemplates
     sed -i 's/^          name: plugins-home/          name: data/' argocd.yaml
     grep -n '^  name: argocd-server$' argocd.yaml | awk -F ':' '{print $1}' | while read line; do if [[ $(sed -n "$[line+1]p" argocd.yaml) = "spec:" ]] && [[ $(sed -n "$[line+2]p" argocd.yaml) = "  selector:" ]]; then grep -n '^---' argocd.yaml | awk -F ':' '{print $1}' | while read item; do if [[ $item -gt $line ]]; then echo argocd.yaml:$item; exit; fi; done; fi; done
@@ -473,7 +473,7 @@ grep -n 'argocd-notifications' argocd.yaml | grep -v '#' | awk -F ':' '{print $1
   ```shell
   # localtime
   ls *.yaml | while read file; do sed -i -e '/^        env:/a\        - name: TZ\n          value: "Asia/Shanghai"' -e '/^        name: redis/a\        env:\n        - name: TZ\n          value: "Asia/Shanghai"' -e '/^          env:/a\            - name: TZ\n              value: "Asia/Shanghai"' $file; done
-  
+
   # argocd-cluster-cm
   sed -i -e '/^          name: plugins-home/a\        - name: argocd-cluster-cm\n          mountPath: /home/argocd/.kube' -e '/^        name: plugins-home/a\      - name: argocd-cluster-cm\n        configMap:\n          name: argocd-cluster-cm' argocd.yaml
   ```
@@ -518,10 +518,3 @@ kubectl -n argocd exec -it $(kubectl -n argocd get pod | grep argocd-server | aw
 # to apply the new password hash
 kubectl -n argocd patch secret argocd-secret -p '{"stringData": {"admin.password": "<password-hash>", "admin.passwordMtime": "'$(date +%FT%T%Z)'"}}'
 ```
-
-
-
-
-
-
-
