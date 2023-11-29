@@ -172,6 +172,19 @@ git rev-parse --short HEAD
 
 ## ⭐ shell
 
+```shell
+# awk
+# 适合结构化数据，支持行、列处理
+
+# sed
+# 主要用于进行文本和流的编辑功能，包括替换、删除、添加、选取
+
+# grep
+# 主要提供文件搜索功能
+```
+
+
+
 ### 1. if
 
 ```shell
@@ -310,6 +323,12 @@ fi
 
 ### 5. sed
 
+- ##### options
+
+  ```shell
+  # -n:  不输出默认内容。在没有这个选项时，sed 会默认输出每一行内容到终端
+  ```
+
 #### 5.1. trim
 
 ```shell
@@ -358,6 +377,9 @@ sed -i "/^[[:space:]]nginx/a\  New Line" file.txt
 # 在匹配行前面追加一行 "New Line"
 sed -i '/nginx/i New Line' file.txt
 
+# 添加首行
+sed -i '1i # hello word' file.txt
+
 # 在第 10 行追加 new.txt 文件内容
 sed -i '20r new.txt' file.txt
 
@@ -366,7 +388,20 @@ sed -i '20r new.txt' file.txt
 # r 在匹配行后面追加文件内容
 ```
 
-#### 5.3. replace
+#### 5.3. delete
+
+```shell
+# 删除包含匹配字符的行
+sed -i '/pattern/d' file.txt
+
+# 删除指定行
+sed -i '5d' file.txt
+
+# 删除指定范围的行
+sed -i '10,20d' file.txt
+```
+
+#### 5.4. replace
 
 ```shell
 # old 全字符匹配(首个)
@@ -388,8 +423,11 @@ sed -i 's/^/#&/g' file.text
 # 在每一行末尾添加字符 '#'
 sed -i 's/^/&#/g' file.text
 
-# 在第1-9行行首添加字符 '#'
-sed '1,9 s/^/#/' file.text
+# 在第1-9行行首添加字符 '# '
+sed -i '1,9 s/^/# /' file.text
+
+# 在第1-9行，并且不以 '#' 开头的行行首添加字符 '# '
+sed -i '1,9 {/^[^#]/ s/^/# /}' file.text
 
 # 查看第 100 行内容
 sed -n '100p' file.txt
@@ -401,74 +439,150 @@ sed -n '100p' file.txt
 # -s 字符串替换 's/old/new/g' 或 's@old@new@g' 、's|old|new|g'
 ```
 
+#### 5.5. matching
+
+```shell
+echo 'fmt.Println("hello word")' | sed 's/.*"\(.*\)".*/\1/' 
+# hello word
+
+# 输出 image 列表
+sed -n '/image:/ s/image://p' calico.yaml
+# -n:             取消默认打印行为
+# '/image:/':     行筛选
+# 's/image://p':  替换命令。(s=substitute) 将 'image:' 替换为 ''，'p' 为打印替换后的结果
+```
+
 ---
 
 ### 6. awk
 
-```shell
-# 打印第一行
-cat demo.txt | awk 'NR==1'
-
-# 打印最后一行
-cat demo.txt | awk 'END {print}'
-
-# 打印第一行第一列
-cat demo.txt | awk 'NR==1 {print $1}'
-
-# 打印第一列和第三列
-cat demo.txt | awk '{print $1,$3}'
-
-# 打印最后一列
-cat demo.txt | awk '{print $NF}'
-
-# 打印行号
-cat demo.txt | awk '{print NR}'
-
-# 打印行数
-cat demo.txt | awk 'END {print NR}'
-```
+#### 6.1. variable
 
 ```shell
-# RS
-# awk 读取文件时的行分隔符
-echo '1,2,3' | awk '{print $1}'
-···
-1,2,3
-···
-echo '1,2,3' | awk -v RS="," '{print $1}'
-···
-1
-2
-3
-···
-
-# ORS
-# awk 输出时的行结束符
-seq 3 | awk '{print $1}'
-···
-1
-2
-3
-···
-seq 3 | awk -v ORS="," '{print $1}'
-···
-1,2,3,
-···
-
-# FS (-F)
-# awk 读取文件时的列分隔符
-echo '1,2,3' | awk -F , '{print $1}'      # 1
-echo '1,2,3' | awk -v FS="," '{print $1}' # 1
-
-# OFS
-# awk 输出时的列分隔符
-echo '1 2 3' | awk '{print $0}'                  # 1 2 3
-echo '1 2 3' | awk -v OFS="," '{print $1,$2}'    # 1,2
-# 打印 '$0' 时，为使 'OFS' 生效，需要改变 '$0'，实际上 '$0' 本身没任何改变
-echo '1 2 3' | awk -v OFS="," '{$1=$1;print $0}' # 1,2,3
+# $0  : 当前行内容
+# $1, $2 ... $NF : 当前行的第 1, 2 ... NF 列内容
+# FILENAME       : 当前处理的文件名
+# NR  : 当前行号。注意，当处理多个文件时，'NR' 是累加的
+# FNR : 当前文件的行号
+# NF  : 当前行的列数
+# RS  : 输入记录行分隔符(default: '\n')
+# FS  : 输入记录列分隔符(default: ' ')
+# ORS : 输出记录行分隔符(default: '\n')
+# OFS : 输出记录列分隔符(default: ' ')
 ```
 
-#### 6.1. commands
+#### 6.2. examples
+
+- 行打印
+
+  ```shell
+  # 打印第一行
+  cat demo.txt | awk 'NR==1'
+  
+  # 打印最后一行
+  cat demo.txt | awk 'END {print}'
+  
+  # 打印第一行第一列
+  cat demo.txt | awk 'NR==1 {print $1}'
+  
+  # 打印第一列和第三列
+  cat demo.txt | awk '{print $1,$3}'
+  
+  # 打印最后一列
+  cat demo.txt | awk '{print $NF}'
+  
+  # 打印行号
+  cat demo.txt | awk '{print NR}'
+  
+  # 打印行数
+  cat demo.txt | awk 'END {print NR}'
+  ```
+
+- 分隔符相关
+
+  ```shell
+  # RS
+  # awk 读取文件时的行分隔符
+  echo '1,2,3' | awk '{print $1}'
+  ···
+  1,2,3
+  ···
+  echo '1,2,3' | awk -v RS="," '{print $1}'
+  ···
+  1
+  2
+  3
+  ···
+  
+  # ORS
+  # awk 输出时的行结束符
+  seq 3 | awk '{print $1}'
+  ···
+  1
+  2
+  3
+  ···
+  seq 3 | awk -v ORS="," '{print $1}'
+  ···
+  1,2,3,
+  ···
+  
+  # FS (-F)
+  # awk 读取文件时的列分隔符
+  echo '1,2,3' | awk -F , '{print $1}'      # 1
+  echo '1,2,3' | awk -v FS="," '{print $1}' # 1
+  # 注意: 使用 'FS' 时，'print $0' 本身没任何改变, 需改变 '$0'
+  echo '1,2,3' | awk -v FS="," '{$1=$1; print}'
+  
+  # OFS
+  # awk 输出时的列分隔符
+  echo '1 2 3' | awk '{print $0}'                  # 1 2 3
+  echo '1 2 3' | awk -v OFS="," '{print $1,$2}'    # 1,2
+  # 打印 '$0' 时，为使 'OFS' 生效，需要改变 '$0'，实际上 '$0' 本身没任何改变
+  echo '1 2 3' | awk -v OFS="," '{$1=$1;print $0}' # 1,2,3
+  ```
+
+  
+
+- 字符匹配相关
+
+  ```shell
+  # 打印匹配字符行
+  awk '/image: / print}' calico.yaml
+  
+  # 去除 'image:'
+  awk '/image: / {sub(/image:/, ""); print}' calico.yaml
+  ```
+  
+  ```shell
+  # 打印匹配字符所在行号
+  awk '/^kind: Namespace/ {print FILENAME":"NR} ' tekton.yaml
+  # `/^kind: Namespace/ {print FILENAME":"NR}`: 当匹配到 '^kind: Namespace' 时，执行 '{print FILENAME":"NR}', 注意 ':' 需要添加引号
+  
+  # 打印匹配字符，并且未注释的行号
+  awk '!/^#/ && /name: argocd-notifications/ {print FILENAME":"NR}' argocd.yaml
+  # `/xxx/` 为一个筛选条件，`{xxx}` 为执行的语句，可类比 if 语句
+  ```
+
+  ```shell
+  # 打印俩个匹配字符之间的内容。包含匹配行
+  awk '/^data/,/^kind/' secret.yaml
+  
+  # 打印俩个匹配字符之间的内容。不包含匹配行
+  awk '/^data/,/^kind/ { if (!/^data/ && !/^kind/) print }' secret.yaml
+  ```
+  
+  ```shell
+  # 在 k8s 的 多个资源类型 yaml 中，找到匹配字符所在的模块.(打印最近的 '---' 所在行)
+  awk '/^---/ {if (mark) { print FILENAME":"above; print FILENAME":"NR}; above=NR; focus=""; next} /^kind: Namespace/ {mark=NR}' tekton.yaml
+  # 在匹配到 '^kind: Namespace' 时，标记 'mark'，在下次匹配到 '^---' 时，打印上次匹配到的 '^---' 行，并且打印本次匹配到的行
+  # 注意：print 时，'print above NR' 实际效果为 'aboveNR', 'print above" "NR' 实际效果为 'above NR', 'print above, NR' 实际效果为 'above NR'
+  
+  # 在 k8s 的 多个资源类型 yaml 中，找到匹配字符所在的模块, 并注释相关代码
+  awk '/^---/ {if (focus) { print above","NR}; above=NR; focus=""; next} /^kind: Namespace/ {focus=NR}' tekton.yaml | while read line; do sed -i "$line {/^[^#]/ s/^/# /}" tekton.yaml; done
+  ```
+
+#### 6.3. commands
 
 ```shell
 # docker images
@@ -487,6 +601,8 @@ docker images | awk 'BEGIN{ORS=" ";OFS=":"}{print $1,$2}'
 # -v 反转匹配
 # -n 显示匹配模式的行号
 # -o 只显示匹配子串
+
+# -- 停止解析选项参数。匹配 '--root-dir' 时使用。eg: grep -- --root-dir
 ```
 
 ```shell
@@ -524,7 +640,7 @@ echo '[{"id":1},{"id":12},{"id":123}]' | grep -o '"id":[0-9]*'
 
 # 'fmt.Println("https://www.google.com")'
 grep -o 'https://[^"]*'
-#https://www.google.com
+# https://www.google.com
 ```
 
 ---
@@ -990,6 +1106,36 @@ unzip -d demo demo.zip
 
 ---
 
+### wget
+
+```shell
+wget [optoins] [url]
+
+# options
+#
+# -O  指定保存下载文件名
+# -P  指定保存下载文件夹
+# -c  断点续传
+# -q  静默模式，减少输出信息
+```
+
+---
+
+### curl
+
+```shell
+curl [optins] [url]
+
+# options
+#
+# -X  HTTP Method. eg: `-X POST`
+# -H  HTTP Header. eg: `-H "Content-Type: application/json"`
+# -d  Request Param. eg: `-d '{"username": "user", "pasword": "password"}'`
+# -k, --insecure  不验证 ssl 证书
+```
+
+---
+
 ### root
 
 ```shell
@@ -1194,6 +1340,19 @@ cat >> /etc/fstab << EOF
 EOF
 
 reboot
+```
+
+---
+
+### base64
+
+```shell
+# 编码
+echo -n "Hello, Word" | base64
+# '-n': 防止输出包含换行符
+
+# 解码
+echo "SGVsbG8sIFdvcmQ=" | base64 --decode
 ```
 
 ---

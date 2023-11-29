@@ -3,8 +3,11 @@
 set -e
 
 root="yaml"
-rm -rf $root
-mkdir $root >/dev/null 2>&1
+if [[ -d "$root" ]]; then
+  rm -rf $root/*
+else
+  mkdir $root
+fi
 cd $root
 
 version_argocd=v2.3.17
@@ -25,9 +28,3 @@ for (( i = 0; i < ${#files[@]}; i++ )); do
 
   wget -O - ${args[0]} >> ${args[1]}
 done
-
-# argocd
-cat ../argocd-custom.yaml >> argocd.yaml
-
-# rekton
-cat ../tekton-custom.yaml >> tekton.yaml

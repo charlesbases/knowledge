@@ -1,3 +1,8 @@
+```shell
+# namespace
+kubectl create namespace devops
+```
+
 ------
 
 ## 1. Tekton
@@ -22,14 +27,6 @@ wget -O - https://storage.googleapis.com/tekton-releases/pipeline/previous/$vers
 
 version=v0.34.0
 wget -O https://github.com/tektoncd/dashboard/releases/download/$version/release.yaml >> tekton.yaml
-```
-
-```shell
-# 注释掉 'kind: Namespace', 改为手动创建。防止卸载时 ns 删除失败
-ls *yaml | while read file; do grep -n '^kind: Namespace' $file | awk -F ':' '{print $1}' | while read line; do echo $file:$line; done; done
-
-# namespace
-kubectl create namespace devops
 ```
 
 ### 1.2. documents
@@ -354,132 +351,146 @@ spec:
 
 ## 3. Getting Started
 
+[devops.yaml](devops.yaml)
+
 ```shell
-# 注释掉 'kind: Namespace', 改为手动创建。防止卸载时 ns 删除失败
-ls *.yaml | while read file; do line=$(grep -n '^kind: Namespace' $file | awk -F ':' '{print $1}');  if [[ $line ]]; then echo "$file:$line"; fi; done
-
-# 修改镜像拉取策略
-ls *.yaml | while read file; do sed -i 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' $file; done
-
-# 禁用 argocd-notifications
-grep -n 'argocd-notifications' argocd.yaml | grep -v '#' | awk -F ':' '{print $1}' | while read line; do echo argocd.yaml:$line; done
+# 注意: 因 tekton 和 argocd 的 yaml 缩进方式不同，下载完官方文件后，需要粘贴再复制，统一格式化为 ide 缩进方案 "indent sequence value", 才可执行脚本进行 yaml 修改
 ```
 
-### 3.1. yaml
+```shell
+# 备份原始 yaml
+sed -i '1i ---' tekton.yaml && ls *.yaml | while read file; do cp $file $file.bak; done
+```
 
-[argocd](argocd-custom.yaml) [tekton](tekton-custom.yaml)
+```shell
+# 修改镜像拉取策略
+sed -i 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' *.yaml
+```
 
-- ##### ingress
+### 3.1. ingress
 
-  ```yaml
-  ---
-  apiVersion: networking.k8s.io/v1
-  kind: Ingress
-  metadata:
-    name: tekton
-    namespace: tekton-pipelines
-    annotations:
-      kubernetes.io/ingress.class: "nginx"
-  spec:
-    rules:
-    - host: tekton.devops.com
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tekton
+  namespace: tekton-pipelines
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+#    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+#    nginx.ingress.kubernetes.io/ssl-passthrough: 'true'
+#    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  rules:
+    - host: devops.com
       http:
         paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: tekton-dashboard
-              port:
-                number: 9097
-  ---
-  kind: Ingress
-  apiVersion: networking.k8s.io/v1
-  metadata:
-    name: argocd
-    namespace: argocd
-    annotations:
-      kubernetes.io/ingress.class: nginx
-      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
-      nginx.ingress.kubernetes.io/ssl-passthrough: 'true'
-      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-  spec:
-    rules:
-    - host: argocd.devops.com
-      http:
-        paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: argocd-server
-              port:
-                number: 80
+          - path: /tekton
+            pathType: Prefix
+            backend:
+              service:
+                name: tekton-dashboard
+                port:
+                  number: 9097
+          - path: /argocd
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80
+```
+
+### 3.2. tekton
+
+```shell
+# 注释掉 'kind: Namespace', 改为手动创建。防止卸载时 ns 删除失败
+# awk '/^kind: Namespace/ {print FILENAME":"NR} ' *.yaml
+awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} /^kind: Namespace/ {focus=NR}' tekton.yaml | while read line; do sed -i "$line {/^[^#]/ s/^/# /}" tekton.yaml; done
+```
+
+- ##### tekton-dashboard
+
+  ```shell
+  awk '/^kind: Deployment/ || /^kind: StatefulSet/ { line=FNR } /serviceAccountName: tekton-dashboard/ { if ( line ) { print FILENAME":"line; exit } }' tekton.yaml
+  
+  # localtime
+  ...
+            volumeMounts:
+              - mountPath: /etc/localtime
+                name: localtime
+  ...
+        volumes:
+          - hostPath:
+              path: /usr/share/zoneinfo/Asia/Shanghai
+              type: ""
+            name: localtime
+  ...
   ```
 
-- ##### PersistentVolumeClaim
+### 3.3. argocd
 
-  - ##### tekton
+```shell
+# 禁用 argocd-notifications
+awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} /name: argocd-notifications/ {focus=NR}' argocd.yaml | while read line; do sed -i "$line {/^[^#]/ s/^/# /}" argocd.yaml; done
+```
 
-    ```shell
+- ##### argocd-server
 
-    ```
+  ```shell
+  awk '/^kind: Deployment/ || /^kind: StatefulSet/ { line=FNR } /serviceAccountName: argocd-server/ { if ( line ) { print FILENAME":"line; exit } }' argocd.yaml
+  ```
 
-  - ##### argocd
+  ```shell
+  # 修改 deployment 为 statefulset
+  awk '/^kind: Deployment/ || /^kind: StatefulSet/ { line=FNR } /serviceAccountName: argocd-server/ { if ( line ) { print line; exit } }' argocd.yaml | while read line; do sed -i "$line s/Deployment/StatefulSet/" argocd.yaml; done
+  ```
 
-    ```shell
-    # 修改 Deployment 为 StatefulSet
-    grep -n '^  name: argocd-server$' argocd.yaml | awk -F ':' '{print $1}' | while read line; do if [[ $(sed -n "$[line+1]p" argocd.yaml) = "spec:" ]] && [[ $(sed -n "$[line+2]p" argocd.yaml) = "  selector:" ]]
-    ; then echo argocd.yaml:$line; exit; fi; done
-    # yaml
-    ...
-    kind: StatefulSet
-    ...
-
-    # 取消 volumes 挂载
-    grep -n '^      serviceAccountName: argocd-server' argocd.yaml | awk -F ':' '{print $1}' | while read line; do echo argocd.yaml:$[line+1]; done
-    # yaml
-    ...
-          volumes:
-    #      - emptyDir: { }
-    #        name: plugins-home
-    ...
-
-    # 添加 serviceName、volumeClaimTemplates
-    sed -i 's/^          name: plugins-home/          name: data/' argocd.yaml
-    grep -n '^  name: argocd-server$' argocd.yaml | awk -F ':' '{print $1}' | while read line; do if [[ $(sed -n "$[line+1]p" argocd.yaml) = "spec:" ]] && [[ $(sed -n "$[line+2]p" argocd.yaml) = "  selector:" ]]; then grep -n '^---' argocd.yaml | awk -F ':' '{print $1}' | while read item; do if [[ $item -gt $line ]]; then echo argocd.yaml:$item; exit; fi; done; fi; done
-    # yaml
-    ...
-      volumeClaimTemplates:
+  ```shell
+  # volumes.data (pvc)
+  awk '/volumeMounts/ { line=FNR } /serviceAccountName: argocd-server$/ { if ( line ) { print FILENAME":"line; exit } } ' argocd.yaml
+      
+  ...
+            volumeMounts:
+  #            - mountPath: /home/argocd
+  #              name: plugins-home
+              - mountPath: /home/argocd
+                name: data
+  ...
+        volumes:
+  #        - emptyDir: { }
+  #          name: plugins-home
+    serviceName: argocd-server
+    volumeClaimTemplates:
       - kind: PersistentVolumeClaim
         apiVersion: v1
         metadata:
           name: data
         spec:
           accessModes:
-          - ReadWriteOnce
+            - ReadWriteOnce
           resources:
             requests:
-              storage: 1024Mi
+              storage: 1Ti
           storageClassName: juicefs-sc
           volumeMode: Filesystem
-      serviceName: argocd-server
-    ---
-    ...
-    ```
-
-- ##### volume
-
-  ```shell
-  # localtime
-  ls *.yaml | while read file; do sed -i -e '/^        env:/a\        - name: TZ\n          value: "Asia/Shanghai"' -e '/^        name: redis/a\        env:\n        - name: TZ\n          value: "Asia/Shanghai"' -e '/^          env:/a\            - name: TZ\n              value: "Asia/Shanghai"' $file; done
-
-  # argocd-cluster-cm
-  sed -i -e '/^          name: plugins-home/a\        - name: argocd-cluster-cm\n          mountPath: /home/argocd/.kube' -e '/^        name: plugins-home/a\      - name: argocd-cluster-cm\n        configMap:\n          name: argocd-cluster-cm' argocd.yaml
+  ...
   ```
-
-- ##### Secret
-
+  
+  ```shell
+  # volumes.kubeconfig
+  awk '/^kind: Deployment/ || /^kind: StatefulSet/ { line=FNR } /serviceAccountName: argocd-server$/ { if ( line ) { print line; exit } } ' argocd.yaml | \
+    awk "/volumeMounts:/ { if ( FNR > $(cat) ) { print FNR; exit } }" argocd.yaml | \
+      sed -i "$(cat)a\            - mountPath: /home/argocd/.kube\n              name: kubeconfig" argocd.yaml
+  ```
+  
+  ```shell
+  # volumes.localtime
+  awk '/^kind: Deployment/ || /^kind: StatefulSet/ { line=FNR } /serviceAccountName: argocd-server$/ { if ( line ) { print line; exit } } ' argocd.yaml | \
+    awk "/volumeMounts:/ { if ( FNR > $(cat) ) { print FNR; exit } }" argocd.yaml | \
+      sed -i "$(cat)a\            - mountPath: /etc/localtime\n              name: localtime" argocd.yaml
+  ```
+  
   ```shell
   # 修改 argocd admin 默认密码为 '12345678'
   sed -i "/^  name: argocd-secret/a\stringData:\n  admin.password: \"\$2a\$10\$ZlLYZpTmSOtJEvgdQp6qsuVysPrneGq4f7P1e0C6ch51ro5lJc8NW\"\n  admin.passwordMtime: \"$(date +%FT%T)\"" argocd.yaml
