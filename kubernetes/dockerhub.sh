@@ -1,48 +1,47 @@
 #!/usr/bin/env bash
 
-# 查看 kubernetes 镜像列表
-# sudo kubeadm config images list > images.txt
-
 help() {
-  echo """
+  echo """\
 Usage:
-  ./$(basename $0) [options] command
+  ./$(basename $0) [options] <command>
 
 Options:
-  -f         从指定文件夹中整理镜像列表
-  -o         保存镜像至指定目录
+  -f         从指定路径中整理镜像列表
+  -o         镜像输出路径
 
 Commands:
+  list       镜像列表
   pull       镜像拉取
-  push       镜像推送至私有仓库
+  push       镜像推送
   clean      本地镜像清理"""
   exit
 }
 
-findimages() {
-  ls $1 | while read item; do
-    if [[ -d "$1/$item" ]]; then
-      findimages $1/$item
-    else
-      if [[ $(echo $item | grep ".yaml") ]]; then
-        cat $1/$item | grep "image: " | sed -s 's/.*image: //g' | sed -s 's/#.*//' | sed -s 's/"//g' | sed -s "s/'//g" | while read image; do
-          echo "find \"$image\" in \"$1/$item\""
-          echo $image >> $imagesrepo
-        done
-      fi
-    fi
-  done
+display() {
+  # $filepath 不是文件夹，并且不是 yaml 文件
+  if [[ -f $filepath ]] && [[ -z $(echo $filepath | grep '.yaml$') ]] ; then
+    grep -v '^#' $filepath
+    return
+  fi
+
+  # $filepath 是文件夹，或者是 yaml 文件
+  if [[ -d $filepath ]] || [[ $(echo $filepath | grep '.yaml$') ]]; then
+    rm -rf dockerhub.tmp
+    find $filepath -type f | grep '.yaml$' | while read file; do
+      awk '!/#/ && /image:/ {gsub(/ |'\''|"/, ""); print}' $file | awk -v FS="image:" '{if ($2) {print $2}}' | awk -F@ '{print $1}' >> dockerhub.tmp
+    done
+    cat dockerhub.tmp | sort | uniq
+    rm -rf dockerhub.tmp
+    return
+  fi
+
+  echo -e "\033[31mopen $filepath: No such file or directory\033[0m"
+  exit
 }
 
 dockerpull() {
-  if [[ "$filepath" ]]; then
-    findimages $filepath
-  fi
-
-  cat $imagesrepo | sort | uniq > $imagesrepo
-
-  cat $imagesrepo | while read image; do
-    echo -e "\033[32mdocker pull $image ...\033[0m"
+  display | while read image; do
+    echo -e "\033[32mdocker pull $image\033[0m"
     docker pull $image
   done
 }
@@ -54,41 +53,43 @@ dockerpush() {
     exit
   fi
 
-  cat $imagesrepo | while read image; do
-    docker tag $image $1/$image
+  display | while read image; do
+    # docker pull
+    echo -e "\033[32mdocker pull $image\033[0m"
+    docker pull $image
 
-    echo -e "\033[32mdocker push $1/$image ...\033[0m"
+    # docker push
+    echo -e "\033[36mdocker push $image\033[0m"
+    docker tag $image $1/$image
     docker push $1/$image
+
+    echo
   done
 }
 
 dockersave() {
-  if [[ ! -d "$output" ]]; then
-    mkdir -p $output
+  if [[ ! -d $(dirname $output) ]]; then
+    mkdir -p $(dirname $output)
   fi
 
-  cat $imagesrepo | while read image; do
-    filename=${image##*/}
-    filename=${filename//:/_}
-
-    echo -e "\033[32mdocker save $image ...\033[0m"
-    docker save -o $output/$filename.tar $image
+  display | while read image; do
+    # docker pull
+    echo -e "\033[32mdocker pull $image\033[0m"
+    docker pull $image
+    echo
   done
+
+  # docker save
+  echo -e "\033[34mdocker save -o $output\033[0m"
+  docker save -o $output $(display | awk -v ORS=" " '{print}')
 }
 
 dockerclean() {
-  cat $imagesrepo | while read image; do
-    local name=${image%:*}
-    local tag=${image##*:}
-    docker rmi -f $(docker images | grep $name | grep $tag | awk '{if (NR==1){print $3}}')
-  done
+  exit
 }
 
-output="images"
-filepath=
-
-# 整理后的镜像列表
-imagesrepo="images.repo"
+output="output/$(date +"%Y%m%d%H%M%S").tar"
+filepath="."
 
 while getopts ":f:o:h" opt; do
   case $opt in
@@ -109,10 +110,12 @@ while getopts ":f:o:h" opt; do
   esac
 done
 
-# 去除 options
 shift $(($OPTIND - 1))
 
 case $1 in
+  ""|list)
+  display
+  ;;
   pull)
   dockerpull
   ;;

@@ -1,6 +1,6 @@
 # 技术手册
 
-------
+---
 
 - ##### [git](#⭐-git)
 
@@ -18,7 +18,7 @@
 
 - ##### [windows](#⭐-windows)
 
-------
+---
 
 ## ⭐ git
 
@@ -133,7 +133,21 @@ git branch --set-upstream-to=<remote-branch> <local-branch>
 
 ---
 
-### 7. git-for-windows
+### 7. filter-branch
+
+```shell
+# 删除大文件
+git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch <filename>' --prune-empty --tag-name-filter cat -- --all
+
+# 清楚 git 历史
+git reflog expire --expire=now --all && git gc --prune=now --aggressice
+
+git push -f
+```
+
+---
+
+### 8. git-for-windows
 
 - ##### vimrc
 
@@ -155,7 +169,7 @@ git branch --set-upstream-to=<remote-branch> <local-branch>
 
 ---
 
-### 99. others
+### others
 
 ```shell
 # 查看当前分支名
@@ -168,7 +182,7 @@ git rev-parse HEAD
 git rev-parse --short HEAD
 ```
 
-## ————————————
+## ————————
 
 ## ⭐ shell
 
@@ -182,8 +196,6 @@ git rev-parse --short HEAD
 # grep
 # 主要提供文件搜索功能
 ```
-
-
 
 ### 1. if
 
@@ -442,7 +454,7 @@ sed -n '100p' file.txt
 #### 5.5. matching
 
 ```shell
-echo 'fmt.Println("hello word")' | sed 's/.*"\(.*\)".*/\1/' 
+echo 'fmt.Println("hello word")' | sed 's/.*"\(.*\)".*/\1/'
 # hello word
 
 # 输出 image 列表
@@ -478,22 +490,22 @@ sed -n '/image:/ s/image://p' calico.yaml
   ```shell
   # 打印第一行
   cat demo.txt | awk 'NR==1'
-  
+
   # 打印最后一行
   cat demo.txt | awk 'END {print}'
-  
+
   # 打印第一行第一列
   cat demo.txt | awk 'NR==1 {print $1}'
-  
+
   # 打印第一列和第三列
   cat demo.txt | awk '{print $1,$3}'
-  
+
   # 打印最后一列
   cat demo.txt | awk '{print $NF}'
-  
+
   # 打印行号
   cat demo.txt | awk '{print NR}'
-  
+
   # 打印行数
   cat demo.txt | awk 'END {print NR}'
   ```
@@ -542,7 +554,7 @@ sed -n '/image:/ s/image://p' calico.yaml
   echo '1 2 3' | awk -v OFS="," '{$1=$1;print $0}' # 1,2,3
   ```
 
-  
+
 
 - 字符匹配相关
 
@@ -552,8 +564,12 @@ sed -n '/image:/ s/image://p' calico.yaml
   
   # 去除 'image:'
   awk '/image: / {sub(/image:/, ""); print}' calico.yaml
-  ```
+  awk '/image: / {sub(/image:/, ""); gsub(/ /, ""); print}' calico.yaml
   
+  # sub 替换一次
+  # gsub 全部替换
+  ```
+
   ```shell
   # 打印匹配字符所在行号
   awk '/^kind: Namespace/ {print FILENAME":"NR} ' tekton.yaml
@@ -571,7 +587,7 @@ sed -n '/image:/ s/image://p' calico.yaml
   # 打印俩个匹配字符之间的内容。不包含匹配行
   awk '/^data/,/^kind/ { if (!/^data/ && !/^kind/) print }' secret.yaml
   ```
-  
+
   ```shell
   # 在 k8s 的 多个资源类型 yaml 中，找到匹配字符所在的模块.(打印最近的 '---' 所在行)
   awk '/^---/ {if (mark) { print FILENAME":"above; print FILENAME":"NR}; above=NR; focus=""; next} /^kind: Namespace/ {mark=NR}' tekton.yaml
@@ -706,10 +722,6 @@ echo ${string/substring/replacement}
 echo ${string//substring/replacement}
 ```
 
----
-
-### * * * * *
-
 ### string
 
 - 显示匹配字符串
@@ -778,7 +790,7 @@ basename $(echo "https://google.com/xx/xxx") # xxx
 dirname $(echo "https://google.com/xx/xxx")
 ```
 
-## ————————————
+## ————————
 
 ## ⭐ linux
 
@@ -986,13 +998,13 @@ unzip -d demo demo.zip
       -c, --connections <N>  # 单线程与服务器建立并保持 TCP 连接数量
       -d, --duration    <T>  # 压测时间
       -t, --threads     <N>  # 压测线程数
-  
+
       -s, --script      <S>  # 指定 lua 脚本路径
       -H, --header      <H>  # Add header to request
           --latency          # 压测结束后，打印延迟统计信息
           --timeout     <T>  # 连接超时时间
       -v, --version          # wrk 版本信息
-  
+
     <N> 代表数字参数，支持国际单位 (1k, 1M, 1G)
     <T> 代表时间参数，支持时间单位 (2s, 2m, 2h)
   ```
@@ -1006,17 +1018,17 @@ unzip -d demo demo.zip
 
   ```shell
   # wrk -t 32 -c 100 -d 30s --latency http://10.63.3.11:30080/swagger/index.html
-  
+
   Running 30s test @ http://10.63.3.11:30080/swagger/index.html
     32 threads and 100 connections
-  
+
     Thread Stats   Avg      Stdev     Max    +/- Stdev
   #  	状态        平均值     标准差    最大值  正负标准差所占比例
       Latency    24.49ms   29.51ms 201.67ms   78.78%
   #   延迟
       Req/Sec    292.77    138.20    1.86k    72.88%
   #   每秒请求数
-  
+
     Latency Distribution # 延迟分布
        50%    4.69ms
        75%   47.67ms
@@ -1043,7 +1055,7 @@ unzip -d demo demo.zip
       body    = nil,
       thread  = <userdata>,
     }
-    
+
     -- 全局方法
     wrk.format(method, path, headers, body) -- 根据参数和全局变量 `wrk`， 生成 HTTP request 字符串
     wrk.lookup(host, service)               -- 返回所有可用的服务器地址信息
@@ -1055,13 +1067,13 @@ unzip -d demo demo.zip
     ```lua
     -- 启动阶段
     function setup(thread)
-    
+
     -- 运行阶段
     function init(args)
     function delay()    -- 每次发送请求前调用，可用来定制延迟时间
     function request()  -- 用来生成请求，每一次请求都会先调用此方法
     function response(status, headers, body) -- 在收到每一个相应后调用
-    
+
     -- 结束阶段
     function done(summary, latency, request) -- 在整个测试过程中只会调用一次，可以生成定制化的测试报告
     ```
@@ -1237,6 +1249,16 @@ find -name .git -prune -o -name .idea -prune -o -type f -print
 # `-type f` 显示文件
 # `-name .git -prune` 排除名称为 '.git' 的文件夹
 # `-o` 或，用于连接多个表达式
+```
+
+---
+
+### eval
+
+```shell
+# 将参数作为命令进行解释并执行
+command="echo Hello, Word"
+eval $command
 ```
 
 ---
@@ -1969,7 +1991,7 @@ firewall-cmd --zone=public --list-ports
 
 ---
 
-### + scripts
+### scripts
 
 #### [remote](.share/scripts/remote.sh)
 
@@ -2004,7 +2026,7 @@ EOF
 source $HOME/.zshrc
 ```
 
-## ————————————
+## ————————
 
 ## ⭐ rust
 
@@ -2228,7 +2250,7 @@ sudo npm install -g pnpm
 sudo ln -s /usr/local/node/bin/pnpm /usr/local/bin/
 ```
 
-## ————————————
+## ————————
 
 ## ⭐ windows
 
@@ -2278,7 +2300,7 @@ sudo ln -s /usr/local/node/bin/pnpm /usr/local/bin/
   netsh interface set interface "EXTERNAL" enable
   ```
 
-------
+---
 
 ### 3. mkilnk
 
@@ -2296,9 +2318,9 @@ mklink /D "C:\Program Files\Docker" "D:\Docker"
 mklink /D "C:\Program Files\CCleaner" "D:\CCleaner"
 ```
 
-------
+---
 
-### 99. others
+### others
 
 - 在文件资源管理器中打开当前路径
 
@@ -2322,4 +2344,4 @@ mklink /D "C:\Program Files\CCleaner" "D:\CCleaner"
   for ip in {1..254}; do ping -n 1 -w 30 10.112.27.$ip; done
   ```
 
-## ————————————
+## ————————

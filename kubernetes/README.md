@@ -177,22 +177,56 @@
 
 ---
 
-### 1.3. 服务启动
+### 1.3. 镜像列表
+
+#### 1.3.1. kubernetes
+
+```shell
+# 基础镜像离线下载
+# sudo kubeadm config images list
+
+repository="10.64.10.210:10083"
+cat kubernetes_v1.21.11.repo | while read line; do docker pull $line && docker tag $line $repository/$line && docker push $repository/$line; done
+```
+
+#### 1.3.2. [calico](#1.6.-网络插件)
+
+```shell
+```
+
+#### 1.3.3. [ingress-nginx](./ingress/README.md)
+
+```shell
+```
+
+#### 1.3.4. [kubesphere](./kubesphere/README.md)
+
+```shell
+```
+
+#### 1.3.5. [metrics](#5.3.-metrics)
+
+```shell
+
+```
+
+---
+
+### 1.4. 服务启动
 
 - #### master
 
   ```shell
-  # 基础镜像
-  kubeadm config images list
-
   ip=192.168.1.10
   version=1.23.9
 
   # kubeadm init (k8s.gcr.io)
-  # kubeadm init --apiserver-advertise-address $ip --kubernetes-version $version --service-cidr=10.96.0.0/12  --pod-network-cidr=192.168.0.0/16
+  # sudo kubeadm init --apiserver-advertise-address $ip --kubernetes-version $version --service-cidr=10.96.0.0/12  --pod-network-cidr=192.168.0.0/16 --pod-network-cidr=192.168.0.0/16
 
-  # kubeadm init (aliyuncs)
-  repository=repository.aliyuncs.com/google_containers
+  # kubeadm init (repository)
+  # 注意：使用指定镜像源时，将替换默认镜像源前缀 (k8s.gcr.io)，镜像推送时需修改镜像路径
+  # repository=repository.aliyuncs.com/google_containers
+  repository="10.64.10.210:10083/k8s.gcr.io"
   sudo kubeadm init --apiserver-advertise-address $ip --image-repository $repository --kubernetes-version $version --service-cidr=10.96.0.0/12  --pod-network-cidr=192.168.0.0/16
 
   # 创建 master 账户
@@ -218,19 +252,25 @@
 
   # 验证
   kubectl get nodes
+
+  # metrics (5.3. metrics)
   ```
 
 - #### node
 
   ```shell
-  # kubeadm join ...
+  # 重新加入
+  # sudo sh -c "systemctl stop kubelet.service && rm -rf /etc/kubernetes/{kubelet.conf,pki/ca.crt}"
+
+  # join
+  # sudo kubeadm join ...
   ```
 
 ---
 
-### 1.4. 配置优化
+### 1.5. 配置优化
 
-#### 1.4.1. root-dir
+#### 1.5.1. root-dir
 
 - ##### docker
 
@@ -252,36 +292,60 @@
 
 - ##### kubelet
 
-  ```shell
-  # 修改 kubelet.service
+  - 方案一：创建软链（推荐）
 
-  #  Loaded
-  systemctl status kubelet | grep -- Loaded # /etc/systemd/system/kubelet.service
-  sudo vim /etc/systemd/system/kubelet.service
-  ...
-  [Service]
-  ExecStart=/usr/bin/kubelet $KUBELET_EXTRA_ARGS
-  ...
+    ```shell
+    # stop
+    sudo systemctl stop kubelet
 
-  #  Drop-In
-  sudo systemctl status kubelet | grep -- Drop-In # /etc/systemd/system/kubelet.service.d
-  sudo vim /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-  ...
-  [Service]
-  Environment="KUBELET_EXTRA_ARGS=--config=--root-dir=/u01/etc/kubelet"
-  ...
+    # 数据迁移
+    sudo mv /var/lib/kubelet /u01/etc/kubelet
 
-  # KUBELET_EXTRA_ARGS
-  # --root-dir=/u01/etc/kubelet            => kubelet 数据存储目录
-  # --eviction-hard=nodefs.available<1%    => 在 kubelet 相关存储不足 1% 时，开始驱逐 Pod
-  # --eviction-hard=nodefs.available<10Gi  => 在 kubelet 相关存储不足 10G 时，开始驱逐 Pod
-  # --eviction-hard=imagefs.available<1%   => 在容器运行时，相关存储不足 1% 时，开始驱逐 Pod
+    # 创建软链
+    sudo ln -s /u01/etc/kubelet /var/lib/kubelet
 
-  # 重启 kubelet
-  sudo systemctl restart kubelet
-  ```
+    # 重启 kubelet
+    sudo systemctl restart kubelet
+    ```
 
-#### 1.4.2. kube-proxy
+  - 方案二：修改 root-dir
+
+    ```shell
+    # stop
+    sudo systemctl stop kubelet
+
+    # 数据迁移
+    sudo mv /var/lib/kubelet/{pods,pod-resources} /u01/etc/kubelet/
+
+    # 查看当前 root-dir. (default: "/var/lib/kubelet")
+    sudo systemctl cat kubelet | grep -- --root-dir
+
+    # 查看 kubelet.service 配置
+    sudo systemctl cat kubelet
+
+    # 1、可直接修改 "kubelet.service"
+    ...
+    [Service]
+    ExecStart=/usr/bin/kubelet [args]
+    ...
+
+    # 2、或者修改 "kubeadm.conf"
+    ...
+    [Service]
+    Environment="KUBELET_EXTRA_ARGS=--root-dir=/u01/etc/kubelet"
+    ...
+
+    # KUBELET_EXTRA_ARGS
+    # --root-dir=/u01/etc/kubelet            => kubelet 数据存储目录
+    # --eviction-hard=nodefs.available<1%    => 在 kubelet 相关存储不足 1% 时，开始驱逐 Pod
+    # --eviction-hard=nodefs.available<10Gi  => 在 kubelet 相关存储不足 10G 时，开始驱逐 Pod
+    # --eviction-hard=imagefs.available<1%   => 在容器运行时，相关存储不足 1% 时，开始驱逐 Pod
+
+    # 重启 kubelet
+    sudo systemctl restart kubelet
+    ```
+
+#### 1.5.2. kube-proxy
 
 ```shell
 # 使用 ipvs 模式
@@ -294,7 +358,7 @@ kubectl delete -n kube-system pods $(kubectl get pods -n kube-system | grep kube
 
 ---
 
-### 1.5. 网络插件
+### 1.6. 网络插件
 
 - ##### calico
 
@@ -340,7 +404,7 @@ kubectl delete -n kube-system pods $(kubectl get pods -n kube-system | grep kube
 
 ---
 
-### 1.6. 错误信息
+### 1.9. 错误信息
 
 ```shell
 # 节点重置
@@ -352,13 +416,13 @@ sudo sh -c "kubeadm reset && rm -rf $HOME/.kube /etc/cni/net.d/ /var/lib/cni/cal
 sudo sh -c "kubeadm reset && rm -rf /etc/cni/net.d/ /var/lib/cni/calico"
 ```
 
-#### 1.6.1. [ERROR CRI]
+#### 1.9.1. [ERROR CRI]
 
 ```shell
 rm -rf /etc/containerd/config.toml && systemctl restart containerd
 ```
 
-#### 1.6.2. [ERROR Swap]
+#### 1.9.2. [ERROR Swap]
 
 ```shell
 # 未关闭虚拟内存
@@ -368,20 +432,20 @@ swapoff -a
 sed -ri 's/.*swap.*/#&/' /etc/fstab
 ```
 
-#### 1.6.3. [ERROR NumCPU]
+#### 1.9.3. [ERROR NumCPU]
 
 ```shell
 # 错误的 CPU 核心数。最少为 2.
 ```
 
-#### 1.6.4. [ERROR Port-10250]
+#### 1.9.4. [ERROR Port-10250]
 
 ```shell
 # 端口被占用
 kubeadm reset -f && rm -rf $HOME/.kube
 ```
 
-#### 1.6.5. timed out
+#### 1.9.5. timed out
 
 ```shell
 # 下载基础镜像
@@ -394,7 +458,7 @@ systemctl restart docker
 systemctl stop kubelet
 ```
 
-#### 1.6.6. connection refused
+#### 1.9.6. connection refused
 
 ```shell
 mkdir -p $HOME/.kube
@@ -402,14 +466,14 @@ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
 
-#### 1.6.7. kubelet is not running
+#### 1.9.7. kubelet is not running
 
 ```shell
 # 查看 kubelet 状态
 sudo systemctl status kubelet
 ```
 
-#### 1.6.8. BIRD is not ready
+#### 1.9.8. BIRD is not ready
 
 ```shell
 # 调整 calico 网络插件的网卡发现机制
@@ -431,7 +495,7 @@ kubectl edit daemonsets -n kube-system calico-node
 ...
 ```
 
-#### 1.6.9. coredns ContainerCreating
+#### 1.9.9. coredns ContainerCreating
 
 ```shell
 # 查看 cni 版本是否与 kubernetes 版本兼容
@@ -916,9 +980,6 @@ kubectl get pods -A | grep Evicted | awk '{print $1}' | sort | uniq | while read
   podids=$(kubectl get pod -A -o jsonpath='{range .items[*]}{.metadata.namespace} {.metadata.name} {.spec.nodeName} {.metadata.uid} {"\n"}'); sudo journalctl -xeu kubelet | grep -- orphaned | sed 's/.*"\(.*\)".*/\1/' | while read line; do echo $podids | grep $line; done
 
   # 清理相关 pod 目录
-  # ssh <node>
-  # cd /var/lib/kubelet/pods/$podid
-  # 注意 kubelet 数据储存目录是否修改
   ```
 
   - ###### node
@@ -931,7 +992,9 @@ kubectl get pods -A | grep Evicted | awk '{print $1}' | sort | uniq | while read
     podid=009fd281-295d-45cc-afb0-291b967ed14f
 
     # 清理目录
-    cd /var/lib/kubelet/pods/$podid
+    # rootdir="/var/lib/kubelet"
+    # 查看是否定制 root-dir `ps -ef | grep kubelet | grep root-dir`
+    cd $rootdir/pods/$podid
     ```
 
 ### 7.6. NodePort 无法访问

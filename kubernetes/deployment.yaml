@@ -76,7 +76,7 @@ spec:
       # containers: 容器配置
       containers:
         - name: nginx
-          image: nginx:latest
+          image: nginx:alpine
           # imagePullPolicy: 镜像拉取策略
           #   IfNotPresent: 默认值。镜像在宿主机上不存在时才拉取。
           #   Always: 每次创建 Pod 都会重新拉取一次镜像。

@@ -8,53 +8,37 @@ version: 4.11.1
 
 ## 1. install
 
-```shell
-# docker
-curl -sSL https://get.daocloud.io/docker | sh
-# curl -fsSL https://get.docker.com | bash -s docker --mirror aliyun
-sudo systemctl enable docker
+- ##### linux
 
-# docker-compose
-sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/bin/docker-compose
-sudo chmod 755 /usr/bin/docker-compose
-# sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/bin/docker-compose
-# sudo chmod +x /usr/bin/docker-compose
-# sudo ln -s /usr/bin/docker-compose /usr/local/bin/docker-compose
+  ```shell
+  # 创建 data-root 软链
+  sudo ln -s /u01/etc/docker /var/lib/docker
+  
+  # docker
+  curl -sSL https://get.daocloud.io/docker | sh
+  # curl -fsSL https://get.docker.com | bash -s docker --mirror aliyun
+  sudo systemctl enable docker
+  
+  # docker-compose
+  sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/bin/docker-compose
+  sudo chmod 755 /usr/bin/docker-compose
+  # sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/bin/docker-compose
+  # sudo chmod +x /usr/bin/docker-compose
+  # sudo ln -s /usr/bin/docker-compose /usr/local/bin/docker-compose
+  
+  # 添加当前用户到 docker 用户组
+  sudo gpasswd -a $USER docker
+  
+  # 更新 docker 用户组
+  newgrp docker
+  ```
 
-# 添加当前用户到 docker 用户组
-sudo gpasswd -a $USER docker
+- ##### windows
 
-# 更新 docker 用户组
-newgrp docker
-
-# daemon.json
-sudo vim /etc/docker/daemon.json
-
-···
-{
-  "debug": true,
-  "experimental": false,
-  "data-root": "/opt/docker/",
-  "builder": {
-    "gc": {
-      "defaultKeepStorage": "64GB",
-      "enabled": true
-    }
-  },
-  "exec-opts": [
-    "native.cgroupdriver=systemd"
-  ],
-  "repository-mirrors": [
-    "http://docker.mirrors.ustc.edu.cn"
-  ],
-  "log-driver": "json-file",
-  "log-opts": {
-    "max-file": "8",
-    "max-size": "128m"
-  }
-}
-···
-```
+  ```shell
+  # 创建 data-root 软链
+  mklink /D "C:\Program Files\Docker" "D:\Docker"
+  ```
 
 ------
 
