@@ -65,6 +65,16 @@ dockerpush() {
 
     echo
   done
+
+  read -p "replace repository? (Y/N): " oper
+
+  case $oper in
+    Y|y)
+      display | while read image; do
+        sed -i "s|$image|$1/$image|" $filepath
+      done
+    ;;
+  esac
 }
 
 dockersave() {
