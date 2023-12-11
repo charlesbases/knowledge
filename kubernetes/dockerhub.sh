@@ -85,7 +85,12 @@ dockersave() {
 }
 
 dockerclean() {
-  exit
+  display | while read image; do
+    echo -e "\033[34mdocker rmi -f $image\033[0m"
+
+    docker rmi -f $image 2>&1
+    echo
+  done
 }
 
 output="output/$(date +"%Y%m%d%H%M%S").tar"
