@@ -28,14 +28,20 @@ display() {
     awk '!/#/ && /image: / {gsub(/ /, ""); sub(/image:/, ""); split($1, arr, "@"); print arr[1]}' $file | sort | uniq
 
     # search (images in tekton.yaml)
-    awk '/.*-image/ {print}' $file | awk -v RS="," '!/.*-image/ {gsub(/"/, ""); split($1, arr, "@"); print arr[1]}' | uniq
+    awk '/.*-image/ {print}' $file | awk -v RS="," '!/.*-image/ {gsub(/"|]/, ""); split($1, arr, "@"); print arr[1]}' | uniq
   done
 }
 
 dockerpull() {
   display -q | while read image; do
+    # docker pull
     echo -e "\033[32mdocker pull $image\033[0m"
-    docker pull $image
+    if [[ -z $(docker images | awk '{print $1":"$2}' | grep $image) ]]; then
+      docker pull $image
+    else
+      echo "Digest: $(docker inspect --format='{{.Id}}' $image)"
+    fi
+
     echo
   done
 }
@@ -50,7 +56,11 @@ dockerpush() {
   display -q | while read image; do
     # docker pull
     echo -e "\033[32mdocker pull $image\033[0m"
-    docker pull $image
+    if [[ -z $(docker images | awk '{print $1":"$2}' | grep $image) ]]; then
+      docker pull $image
+    else
+      echo "Digest: $(docker inspect --format='{{.Id}}' $image)"
+    fi
 
     # docker push
     echo -e "\033[36mdocker push $image\033[0m"
