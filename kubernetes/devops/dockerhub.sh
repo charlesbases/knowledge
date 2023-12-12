@@ -28,7 +28,7 @@ display() {
     awk '!/#/ && /image: / {gsub(/ /, ""); sub(/image:/, ""); split($1, arr, "@"); print arr[1]}' $file | sort | uniq
 
     # search (images in tekton.yaml)
-    awk '/.*-image/ {print}' $file | awk -v RS="," '!/.*-image/ {gsub(/"|]/, ""); split($1, arr, "@"); print arr[1]}' | uniq
+    awk '!/#/ && /.*-image/ {print}' $file | awk -v RS="," '!/.*-image/ {gsub(/"|]/, ""); split($1, arr, "@"); print arr[1]}' | uniq
   done
 }
 

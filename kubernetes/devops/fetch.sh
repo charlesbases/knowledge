@@ -18,7 +18,7 @@ files=(
 # tekton-pipeline
 "https://storage.googleapis.com/tekton-releases/pipeline/previous/$version_tekton_pipeline/release.yaml tekton.yaml"
 # tekton-dashboard
-"https://github.com/tektoncd/dashboard/releases/download/$version_tekton_dashboard/release.yaml tekton.yaml"
+"https://github.com/tektoncd/dashboard/releases/download/$version_tekton_dashboard/release-full.yaml tekton.yaml"
 # argocd
 "https://raw.githubusercontent.com/argoproj/argo-cd/$version_argocd/manifests/install.yaml argocd.yaml"
 )

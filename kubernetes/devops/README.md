@@ -379,6 +379,9 @@ awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} 
 # 调整 "-shell-image" 镜像 hash
 awk '/-shell-image/ || /-gsutil-image/ {print FILENAME":"FNR}' tekton.yaml
 
+# 移除镜像 sha256
+sed -i 's/@sha256[^"]*//g' tekton.yaml
+
 # 镜像下载
 ./dockerhub.sh pull
 ```
@@ -435,12 +438,18 @@ awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} 
   ```shell
   # 修改 deployment 为 statefulset
   awk '/^kind: Deployment/ || /^kind: StatefulSet/ { line=FNR } /serviceAccountName: argocd-server/ { if ( line ) { print line; exit } }' argocd.yaml | while read line; do sed -i "$line s/Deployment/StatefulSet/" argocd.yaml; done
+  
+  # 添加 serviceName
+  ...
+  spec:
+    serviceName: argocd-server
+  ...
   ```
 
   ```shell
   # volumes.data (pvc)
   awk '/volumeMounts/ { line=FNR } /serviceAccountName: argocd-server$/ { if ( line ) { print FILENAME":"line; exit } } ' argocd.yaml
-
+  
   ...
             volumeMounts:
   #            - mountPath: /home/argocd
@@ -471,7 +480,7 @@ awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} 
   ```shell
   # volumes.localtime & volumes.kubeconfig
   awk '/volumeMounts/ { line=FNR } /serviceAccountName: argocd-server$/ { if ( line ) { print FILENAME":"line; exit } } ' argocd.yaml
-
+  
   ...
             volumeMounts:
               - mountPath: /etc/localtime
