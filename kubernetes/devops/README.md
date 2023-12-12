@@ -29,6 +29,8 @@ version=v0.34.0
 wget -O https://github.com/tektoncd/dashboard/releases/download/$version/release.yaml >> tekton.yaml
 ```
 
+---
+
 ### 1.2. documents
 
 #### 1.2.1 api-resources
@@ -268,6 +270,8 @@ spec:
   wget -O argocd.yaml https://raw.githubusercontent.com/argoproj/argo-cd/$version/manifests/install.yaml
   ```
 
+---
+
 ### 2.2. documents
 
 #### 2.2.1. resources
@@ -351,69 +355,39 @@ spec:
 
 ## 3. Getting Started
 
-[devops.yaml](devops.yaml)
-
 ```shell
 # 注意: 因 tekton 和 argocd 的 yaml 缩进方式不同，下载完官方文件后，需要粘贴再复制，统一格式化为 ide 缩进方案 "indent sequence value", 才可执行脚本进行 yaml 修改
-```
 
-```shell
 # 备份原始 yaml
 sed -i '1i ---' tekton.yaml && ls *.yaml | while read file; do cp $file $file.bak; done
-```
 
-```shell
 # 修改镜像拉取策略
 sed -i 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' *.yaml
 ```
 
-### 3.1. ingress
+---
 
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: tekton
-  namespace: tekton-pipelines
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
-#    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
-#    nginx.ingress.kubernetes.io/ssl-passthrough: 'true'
-#    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-spec:
-  rules:
-    - host: devops.com
-      http:
-        paths:
-          - path: /tekton
-            pathType: Prefix
-            backend:
-              service:
-                name: tekton-dashboard
-                port:
-                  number: 9097
-          - path: /argocd
-            pathType: Prefix
-            backend:
-              service:
-                name: argocd-server
-                port:
-                  number: 80
-```
-
-### 3.2. tekton
+### 3.1. tekton
 
 ```shell
-# 注释掉 'kind: Namespace', 改为手动创建。防止卸载时 ns 删除失败
+# 注释掉 'kind: Namespace', 改为手动创建。防止卸载时 namespace 删除失败
 # awk '/^kind: Namespace/ {print FILENAME":"NR} ' *.yaml
 awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} /^kind: Namespace/ {focus=NR}' tekton.yaml | while read line; do sed -i "$line {/^[^#]/ s/^/# /}" tekton.yaml; done
+```
+
+```shell
+# 镜像下载
+./dockerhub.sh pull
+
+# 注意:
+# mcr.microsoft.com/powershell:nanoserver 镜像 tag 不存在，需执行 `docker pull mcr.microsoft.com/powershell && docker tag mcr.microsoft.com/powershell:latest mcr.microsoft.com/powershell:nanoserver`
 ```
 
 - ##### tekton-dashboard
 
   ```shell
   awk '/^kind: Deployment/ || /^kind: StatefulSet/ { line=FNR } /serviceAccountName: tekton-dashboard/ { if ( line ) { print FILENAME":"line; exit } }' tekton.yaml
-  
+
   # localtime
   ...
             volumeMounts:
@@ -428,11 +402,28 @@ awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} 
   ...
   ```
 
-### 3.3. argocd
+```shell
+# namespace
+grep '^  namespace: ' tekton.yaml | sort | uniq | awk '{gsub(/ /, ""); sub(/namespace:/, ""); print}' | while read line; do kubectl create namespace $line; done
+```
+
+```shell
+# apply
+kubectl apply -f tekton.yaml
+```
+
+---
+
+### 3.2. argocd
 
 ```shell
 # 禁用 argocd-notifications
 awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} /name: argocd-notifications/ {focus=NR}' argocd.yaml | while read line; do sed -i "$line {/^[^#]/ s/^/# /}" argocd.yaml; done
+```
+
+```shell
+# 镜像下载
+./dockerhub.sh pull
 ```
 
 - ##### argocd-server
@@ -449,7 +440,7 @@ awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} 
   ```shell
   # volumes.data (pvc)
   awk '/volumeMounts/ { line=FNR } /serviceAccountName: argocd-server$/ { if ( line ) { print FILENAME":"line; exit } } ' argocd.yaml
-      
+
   ...
             volumeMounts:
   #            - mountPath: /home/argocd
@@ -476,25 +467,50 @@ awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} 
           volumeMode: Filesystem
   ...
   ```
-  
+
   ```shell
-  # volumes.kubeconfig
-  awk '/^kind: Deployment/ || /^kind: StatefulSet/ { line=FNR } /serviceAccountName: argocd-server$/ { if ( line ) { print line; exit } } ' argocd.yaml | \
-    awk "/volumeMounts:/ { if ( FNR > $(cat) ) { print FNR; exit } }" argocd.yaml | \
-      sed -i "$(cat)a\            - mountPath: /home/argocd/.kube\n              name: kubeconfig" argocd.yaml
+  # volumes.localtime & volumes.kubeconfig
+  awk '/volumeMounts/ { line=FNR } /serviceAccountName: argocd-server$/ { if ( line ) { print FILENAME":"line; exit } } ' argocd.yaml
+
+  ...
+            volumeMounts:
+              - mountPath: /etc/localtime
+                name: localtime
+              - mountPath: /home/argocd/.kube
+                name: kubeconfig
+  ...
+        volumes:
+        - name: localtime
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+        - name: kubeconfig
+          configMap:
+            name: kubeconfig
+            defaultMode: 420
+  ...
   ```
-  
-  ```shell
-  # volumes.localtime
-  awk '/^kind: Deployment/ || /^kind: StatefulSet/ { line=FNR } /serviceAccountName: argocd-server$/ { if ( line ) { print line; exit } } ' argocd.yaml | \
-    awk "/volumeMounts:/ { if ( FNR > $(cat) ) { print FNR; exit } }" argocd.yaml | \
-      sed -i "$(cat)a\            - mountPath: /etc/localtime\n              name: localtime" argocd.yaml
-  ```
-  
+
+- ##### secret
+
   ```shell
   # 修改 argocd admin 默认密码为 '12345678'
   sed -i "/^  name: argocd-secret/a\stringData:\n  admin.password: \"\$2a\$10\$ZlLYZpTmSOtJEvgdQp6qsuVysPrneGq4f7P1e0C6ch51ro5lJc8NW\"\n  admin.passwordMtime: \"$(date +%FT%T)\"" argocd.yaml
   ```
+
+```shell
+# namespace
+kubectl create namespace argocd
+
+# kubeconfig
+kubectl create configmap kubeconfig --from-file ~/.kube/config -n argocd
+
+# apply
+kubectl apply -n argocd -f argocd.yaml
+```
+
+---
+
+### 3.3. [ingress](./devops.yaml)
 
 ------
 
@@ -509,7 +525,6 @@ awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} 
 ```shell
 # argocd-ui
 # username: admin
-
 
 # 自动登录
 kubectl -n argocd exec $(kubectl -n argocd get pod | grep argocd-server | awk '{print $1}') -- bash -c "echo 'alias l=\"ls -alh\"' > .bashrc; echo 'argocd --insecure login localhost:8080 --username=admin --password=12345678' >> .bashrc"

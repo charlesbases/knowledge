@@ -589,6 +589,12 @@ sed -n '/image:/ s/image://p' calico.yaml
   ```
 
   ```shell
+  # k8s.yaml 文件中，打印 "image" 信息，若镜像带有 hash 值，则根据 '@' 进行字段分割 
+  awk '!/#/ && /image: / {gsub(/ /, ""); sub(/image:/, ""); split($1, arr, "@"); print arr[1]}' k8s.yaml | sort | uniq
+  # 将匹配到的第一个字段，以 '@' 进行分割，存入变量 'arr'，并打印 'arr' 第一个字段
+  ```
+  
+  ```shell
   # 在 k8s 的 多个资源类型 yaml 中，找到匹配字符所在的模块.(打印最近的 '---' 所在行)
   awk '/^---/ {if (mark) { print FILENAME":"above; print FILENAME":"NR}; above=NR; focus=""; next} /^kind: Namespace/ {mark=NR}' tekton.yaml
   # 在匹配到 '^kind: Namespace' 时，标记 'mark'，在下次匹配到 '^---' 时，打印上次匹配到的 '^---' 行，并且打印本次匹配到的行

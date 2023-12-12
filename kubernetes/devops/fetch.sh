@@ -28,3 +28,7 @@ for (( i = 0; i < ${#files[@]}; i++ )); do
 
   wget -O - ${args[0]} >> ${args[1]}
 done
+
+ls *.yaml | while read file; do
+  cp $file $file.bak
+done
