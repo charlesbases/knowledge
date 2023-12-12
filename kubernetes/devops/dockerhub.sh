@@ -74,8 +74,10 @@ dockerpush() {
 
   case $oper in
     Y|y)
-      display | while read image; do
-        sed -i "s|$image|$1/$image|" $filepath
+      display -q | while read image; do
+        if [[ -z $(echo $image | grep $1) ]]; then
+          sed -i "s@$image@$1/$image@g" $root/*.yaml
+        fi
       done
     ;;
   esac

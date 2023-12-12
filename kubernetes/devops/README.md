@@ -376,18 +376,18 @@ awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} 
 ```
 
 ```shell
+# 调整 "-shell-image" 镜像 hash
+awk '/-shell-image/ || /-gsutil-image/ {print FILENAME":"FNR}' tekton.yaml
+
 # 镜像下载
 ./dockerhub.sh pull
-
-# 注意:
-# mcr.microsoft.com/powershell:nanoserver 镜像 tag 不存在，需执行 `docker pull mcr.microsoft.com/powershell && docker tag mcr.microsoft.com/powershell:latest mcr.microsoft.com/powershell:nanoserver`
 ```
 
 - ##### tekton-dashboard
 
   ```shell
   awk '/^kind: Deployment/ || /^kind: StatefulSet/ { line=FNR } /serviceAccountName: tekton-dashboard/ { if ( line ) { print FILENAME":"line; exit } }' tekton.yaml
-
+  
   # localtime
   ...
             volumeMounts:

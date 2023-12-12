@@ -82,7 +82,9 @@ dockerpush() {
   case $oper in
     Y|y)
       display | while read image; do
-        sed -i "s|$image|$1/$image|" $filepath
+        if [[ -z $(echo $image | grep $1) ]]; then
+          sed -i "s|$image|$1/$image|" $filepath
+        fi
       done
     ;;
   esac
