@@ -1127,7 +1127,7 @@ unzip -d demo demo.zip
 ### wget
 
 ```shell
-wget [optoins] [url]
+wget [optoins] <url>
 
 # options
 #
@@ -1135,6 +1135,9 @@ wget [optoins] [url]
 # -P  指定保存下载文件夹
 # -c  断点续传
 # -q  静默模式，减少输出信息
+
+# 将文件内容下载并保存到管道
+wget -O - <url>
 ```
 
 ---
@@ -1142,7 +1145,7 @@ wget [optoins] [url]
 ### curl
 
 ```shell
-curl [optins] [url]
+curl [optins] <url>
 
 # options
 #

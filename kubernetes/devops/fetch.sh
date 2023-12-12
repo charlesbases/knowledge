@@ -26,7 +26,7 @@ files=(
 for (( i = 0; i < ${#files[@]}; i++ )); do
   args=(${files[i]})
 
-  wget -O - ${args[0]} >> ${args[1]}
+  wget -O - ${args[0]} >> ${args[1]} && echo
 done
 
 ls *.yaml | while read file; do
