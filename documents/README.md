@@ -454,7 +454,7 @@ sed -n '100p' file.txt
 #### 5.5. matching
 
 ```shell
-echo 'fmt.Println("hello word")' | sed 's/.*"\(.*\)".*/\1/'
+echo 'fmt.Println("hello word")' | sed 's/.*"\([^"]*\)".*/\1/'
 # hello word
 
 # 输出 image 列表
@@ -1151,8 +1151,9 @@ curl [optins] <url>
 #
 # -X  HTTP Method. eg: `-X POST`
 # -H  HTTP Header. eg: `-H "Content-Type: application/json"`
-# -d  Request Param. eg: `-d '{"username": "user", "pasword": "password"}'`
+# -d  Request Param. eg: `-d '{"username": "user", "password": "password"}'`
 # -k, --insecure  不验证 ssl 证书
+# -s, --silent    静默模式，不显示其他信息
 ```
 
 ---

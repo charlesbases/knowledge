@@ -35,7 +35,65 @@ wget -O https://github.com/tektoncd/dashboard/releases/download/$version/release
 
 #### 1.2.1 api-resources
 
-##### 1. Task
+##### 1. Secret
+
+- ###### gitlab
+
+  ```shell
+  # 注意：配置 'Secret' 后，需要在 'TaskRun' 中配置 'serviceAccountName: gitlab-ssh'
+  ```
+
+  ```yaml
+  ---
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: gitlab-ssh
+    namespace: tekton-pipelines
+    annotations:
+      tekton.dev/git-0: 10.63.1.35:9222
+  type: kubernetes.io/ssh-auth
+  stringData:
+    ssh-privatekey: <private-key> # $(cat ~/.ssh/id_rsa)
+    # konw_hosts: <konw_hosts>
+    
+  ---
+  apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: devops
+    namespace: tekton-pipelines
+  secrets:
+  - name: gitlab-ssh
+  ```
+
+- ###### docker
+
+  ```yaml
+  ---
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: docker-basic
+    namespace: tekton-pipelines
+    annotations:
+      tekton.dev/git-0: 10.64.10.210:10083
+  type: kubernetes.io/basic-auth
+  stringData:
+    username: <username>
+    password: <password>
+    
+  ---
+  apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: devops
+    namespace: tekton-pipelines
+  secrets:
+  - name: docker-basic
+  ```
+
+##### 2. Task
 
 *Task 为构建任务，是 Tekton 中不可分割的最小单位，正如同 Pod 在 Kubernetes 中的概念一样。在 Task 中，可以有多个 Step，每个 Step 由一个 Container 来执行。*
 
@@ -50,15 +108,16 @@ spec:
   volumeMode: Filesystem
   storageClassName: juicefs-sc
   accessModes:
-  - ReadWriteMany
+    - ReadWriteMany
   resources:
     requests:
-      storage: 128Gi
+      storage: 1Ti
+
 ---
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: env-golang
+  name: golang-env
   namespace: tekton-pipelines
 data:
   GOOS: 'linux'
@@ -67,8 +126,9 @@ data:
   GO111MODULE: 'on'
   GOPATH: '/gopath'
   GOPROXY: 'https://goproxy.io,direct'
+
 ---
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   labels:
@@ -79,87 +139,82 @@ spec:
   # 由于 tekton 会给每个构建的容器都挂载 '/workspace' 目录，所以每个 steps 步骤里都可以在 '/workspace' 里找到上一步执行的产物
   inputs:
     resources:
-    # ${PipelineResource.metadata.name}
-    # git 可以认为是一个默认的 steps，这个 steps 的逻辑里 tekton会把代码拉取至 'workspace/${resources.name}' 中
-    - name: auth
-      type: git
+      # 引用 'PipelineResource.metadata.name'
+      # git 可以认为是一个默认的 steps，这个 steps 的逻辑里 tekton会把代码拉取至 'workspace/${resources.name}' 中
+      # 具体的 'PipelineResource' 配置可查看 [PipelineResource](#6.-PipelineResource)
+      - name: auth
+        type: git
     params:
-    - name: workspace
-      default: '/workspace/auth'
-    - name: imagetag
-      default: 'auth:v1.0.0'
+      - name: workspace
+        default: '/workspace/auth'
+      - name: imagetag
+        default: 'auth:v1.0.0'
   steps:
-  - name: builder
-    image: 'golang:1.19'
-    # 指定工作目录为代码存放目录
-    workingDir: '${inputs.params.workspace}'
-#    env:
-#    - name: GOPATH
-#      value: '/gopath'
-    envFrom:
-    - configMapRef:
-        name: env-golang
-#    - secretRef:
-#        name: env-golang
-    command:
-    - /bin/bash
-    args:
-    - buils.sh
-    volumeMounts:
-    - name: localtime
-      mountPath: /etc/localtime
-    - name: gopath
-      mountPath: /gopath
-  - name: docker-build
-    image: 'docker:git'
-    workingDir: '${inputs.params.workspace}'
-    args:
-    - --tag
-    - '${inputs.params.imagetag}'
-    - .
-    volumeMounts:
-    - name: localtime
-      mountPath: /etc/localtime
-    - name: docker-socket
-      mountPath: /var/run/docker.sock
-  - name: docker-push
-    image: 'docker:git'
-    workingDir: '${inputs.params.workspace}'
-    args:
-    - push
-    - '${inputs.params.imagetag}'
-    volumeMounts:
-    - name: localtime
-      mountPath: /etc/localtime
-    - name: docker-socket
-      mountPath: /var/run/docker.sock
+    - name: builder
+      image: 'golang:1.20'
+      # 指定工作目录为代码存放目录
+      workingDir: '${inputs.params.workspace}'
+      #    env:
+      #    - name: GOPATH
+      #      value: '/gopath'
+      envFrom:
+        - configMapRef:
+            name: golang-env
+      #    - secretRef:
+      #        name: golang-env
+      command:
+        - /bin/bash
+      args:
+        - build.sh
+      volumeMounts:
+        - name: localtime
+          mountPath: /etc/localtime
+        - name: gopath
+          mountPath: /gopath
+    - name: docker-build
+      image: 'docker:git'
+      workingDir: '${inputs.params.workspace}'
+      args:
+        - --tag
+        - '${inputs.params.imagetag}'
+        - .
+      volumeMounts:
+        - name: localtime
+          mountPath: /etc/localtime
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+    - name: docker-push
+      image: 'docker:git'
+      workingDir: '${inputs.params.workspace}'
+      args:
+        - push
+        - '${inputs.params.imagetag}'
+      volumeMounts:
+        - name: localtime
+          mountPath: /etc/localtime
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
   volumes:
-  - name: localtime
-    hostPath:
-      path: /usr/share/zoneinfo/Asia/Shanghai
-  - name: docker-socket
-    hostPath:
-      path: /var/run/docker.sock
-      type: Socket
-  - name: gopath
-    persistentVolumeClaim:
-      claimName: gopath
+    - name: localtime
+      hostPath:
+        path: /usr/share/zoneinfo/Asia/Shanghai
+    - name: docker-socket
+      hostPath:
+        path: /var/run/docker.sock
+        type: Socket
+    - name: gopath
+      persistentVolumeClaim:
+        claimName: gopath
+
 ```
 
-##### 2. Pipeline
+##### 3. TaskRun
 
-*Pipeline 由一个或多个 Task 组成。在 Pipeline 中，用户可以定义这些 Task 的执行顺序以及依赖关系来组成 DAG（有向无环图）*
-
-##### 3. PipelineRun
-
-*PipelineRun 是 Pipeline 的实际执行产物，当用户定义好 Pipeline 后，可以通过创建 PipelineRun 的方式来执行流水线，并生成一条流水线记录。*
-
-##### 4. TaskRun
-
-*PipelineRun 被创建出来后，会对应 Pipeline 里面的 Task 创建各自的 TaskRun。一个 TaskRun 控制一个 Pod，Task 中的 Step 对应 Pod 中的 Container。当然，TaskRun 也可以单独被创建。*
+*[PipelineRun](#5.-PipelineRun) 被创建出来后，会对应 Pipeline 里面的 Task 创建各自的 TaskRun。一个 TaskRun 控制一个 Pod，Task 中的 Step 对应 Pod 中的 Container。当然，TaskRun 也可以单独被创建。*
 
 ```yaml
-apiVersion: tekton.dev/v1alpha1
+---
+apiVersion: tekton.dev/v1beta1
 kind: TaskRun
 metadata:
   # TaskRun 为一次性任务，不需要定义 'name' 字段，无法修改 TaskRun 中字段重新创建
@@ -167,66 +222,60 @@ metadata:
 spec:
   inputs:
     resources:
-    - name: git
-#      resourceRef:
-#        name: auth
-      # PipelineResource 模板
-      resourceSpec:
-        type: git
-        params:
-        - name: url
-          value: 'ssh://git@gitlab.com/cloud/kubernetes.git'
-        - name: revision
-          value: 'master' # branch or tag or commit hash
-  serviceAccount: git-reporter
+      - name: git
+#        resourceRef:
+#          name: auth
+        # PipelineResource 模板
+        resourceSpec:
+          type: git
+          params:
+            - name: url
+              value: 'ssh://git@gitlab.com/cloud/kubernetes.git'
+            - name: revision
+              value: 'master' # branch or tag or commit hash
+  serviceAccountName: devops
   taskRef:
+    name: auth
+
+```
+
+##### 4. Pipeline
+
+*Pipeline 由一个或多个 Task 组成。在 Pipeline 中，用户可以定义这些 Task 的执行顺序以及依赖关系来组成 DAG（有向无环图）*
+
+##### 5. PipelineRun
+
+*PipelineRun 是 [Pipeline](#4.-Pipeline) 的实际执行产物，当用户定义好 Pipeline 后，可以通过创建 PipelineRun 的方式来执行流水线，并生成一条流水线记录。*
+
+```yaml
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: auth
+  namespace: tekton-pipelines
+spec:
+  serviceAccountName: devops
+  pipelineRef:
     name: auth
 ```
 
-##### 5. PipelineResource
+##### 6. PipelineResource
 
 *PipelineResource 代表着一系列的资源，主要承担作为 Task 的输入或者输出的作用*
 
 *它有以下几种类型：*
 
-*1. git：代表一个 git 仓库，包含了需要被构建的源代码。将 git 资源作为 Task 的 Input，会自动 clone 此 git 仓库。(使用 git 拉取代码时，存在安全和私有仓库安全的问题，需要配置相关的 'secrets/serviceaccount')*
-
-*2. pullRequest：表示来自配置的 url（通常是一个 git 仓库）的 pull request 事件。将 pull request 资源作为 Task 的 Input，将自动下载 pull request 相关元数据的文件，如 base/head commit、comments 以及 labels。*
-
-*3. image：代表镜像仓库中的镜像，通常作为 Task 的 Output，用于生成镜像。*
-
-*4. cluster：表示一个除了当前集群外的 Kubernetes 集群。可以使用 Cluster 资源在不同的集群上部署应用。*
-
-*5. storage：表示 blob 存储，它包含一个对象或目录。将 Storage 资源作为 Task 的 Input 将自动下载存储内容，并允许 Task 执行操作。目前仅支持 GCS。*
-
-*6. cloud event：会在 TaskRun z执行完成后发送事件信息（包含整个 TaskRun） 到指定的 URI 地址，在与第三方通信的时候十分有用。*
+*1. git：代表一个 git 仓库，包含了需要被构建的源代码。将 git 资源作为 Task 的 Input，会自动 clone 此 git 仓库。(使用 git 拉取代码时，存在安全和私有仓库安全的问题，需要配置相关的 '[secrets/serviceaccount](#1.-Secret)')*
 
 ```yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: argocd-gitlab
-  namespace: tekton-pipelines
-type: kubernetes.io/ssh-auth
-data:
-  ssh-privatekey: xxxxxx
-  konw_hosts: xxxxxx
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: argocd-gitlab
-  namespace: tekton-pipelines
-secrets:
-- name: argocd-gitlab
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: PipelineResource
 metadata:
   labels:
-    app: auth
-  name: auth
+    app: auth-gitlab
+  name: auth-gitlab
   namespace: tekton-pipelines
 spec:
   type: git
@@ -236,6 +285,32 @@ spec:
   - name: revision
     value: 'master' # branch or tag or commit hash
 ```
+
+*2. pullRequest：表示来自配置的 url（通常是一个 git 仓库）的 pull request 事件。将 pull request 资源作为 Task 的 Input，将自动下载 pull request 相关元数据的文件，如 base/head commit、comments 以及 labels。*
+
+*3. image：代表镜像仓库中的镜像，通常作为 Task 的 Output，用于生成镜像。*
+
+```yaml
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  labels:
+    app: auth-docker
+  name: auth-docker
+  namespace: tekton-pipelines
+spec:
+  type: image
+  params:
+  - name: url
+    value: '<repo>/csmp/cloud/platform/auth'
+```
+
+*4. cluster：表示一个除了当前集群外的 Kubernetes 集群。可以使用 Cluster 资源在不同的集群上部署应用。*
+
+*5. storage：表示 blob 存储，它包含一个对象或目录。将 Storage 资源作为 Task 的 Input 将自动下载存储内容，并允许 Task 执行操作。目前仅支持 GCS。*
+
+*6. cloud event：会在 TaskRun z执行完成后发送事件信息（包含整个 TaskRun） 到指定的 URI 地址，在与第三方通信的时候十分有用。*
 
 ------
 
@@ -351,12 +426,18 @@ spec:
       prune: true
 ```
 
+#### 2.2.3. notifications
+
+```shell
+
+```
+
 ------
 
 ## 3. Getting Started
 
 ```shell
-# 注意: 因 tekton 和 argocd 的 yaml 缩进方式不同，下载完官方文件后，需要粘贴再复制，统一格式化为 ide 缩进方案 "indent sequence value", 才可执行脚本进行 yaml 修改
+# 注意: 因 tekton 和 argocd 的 yaml 缩进方式不同，下载完官方文件后，需要粘贴再复制(argocd.yaml)，统一格式化为 ide 缩进方案 "indent sequence value", 才可执行脚本进行 yaml 修改
 
 # 备份原始 yaml
 sed -i '1i ---' tekton.yaml && ls *.yaml | while read file; do cp $file $file.bak; done
@@ -421,7 +502,18 @@ kubectl apply -f tekton.yaml
 
 ```shell
 # 禁用 argocd-notifications
-awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} /name: argocd-notifications/ {focus=NR}' argocd.yaml | while read line; do sed -i "$line {/^[^#]/ s/^/# /}" argocd.yaml; done
+# awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} /name: argocd-notifications/ {focus=NR}' argocd.yaml | while read line; do sed -i "$line {/^[^#]/ s/^/# /}" argocd.yaml; done
+```
+
+```shell
+# 禁用 tls
+# argocd-server
+# awk '/ARGOCD_SERVER_INSECURE/ {print FILENAME":"FNR}' argocd.yaml
+sed -i 's/\(.*\)- argocd-server/\1- argocd-server\n\1- --insecure/' argocd.yaml
+
+# argocd-repo-server
+# awk '/ARGOCD_REPO_SERVER_DISABLE_TLS/ {print FILENAME":"FNR}' argocd.yaml
+# sed -i 's/\(.*\)- argocd-repo-server/\1- argocd-repo-server\n\1- --disable-tls/' argocd.yaml
 ```
 
 ```shell
@@ -437,7 +529,7 @@ awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} 
 
   ```shell
   # 修改 deployment 为 statefulset
-  awk '/^kind: Deployment/ || /^kind: StatefulSet/ { line=FNR } /serviceAccountName: argocd-server/ { if ( line ) { print line; exit } }' argocd.yaml | while read line; do sed -i "$line s/Deployment/StatefulSet/" argocd.yaml; done
+  awk '/^kind: Deployment/ || /^kind: StatefulSet/ { line=FNR } /serviceAccountName: argocd-server/ { if ( line ) { print line; exit } }' argocd.yaml | while read line; do sed -i "$line s/Deployment/StatefulSet/" argocd.yaml; done; awk '/^kind: Deployment/ || /^kind: StatefulSet/ { line=FNR } /serviceAccountName: argocd-server/ { if ( line ) { print FILENAME":"line; exit } }' argocd.yaml
   
   # 添加 serviceName
   ...
@@ -489,13 +581,13 @@ awk '/^---/ {if (focus) { print (above+1)"," (NR-1)}; above=NR; focus=""; next} 
                 name: kubeconfig
   ...
         volumes:
-        - name: localtime
-          hostPath:
-            path: /usr/share/zoneinfo/Asia/Shanghai
-        - name: kubeconfig
-          configMap:
-            name: kubeconfig
-            defaultMode: 420
+          - name: localtime
+            hostPath:
+              path: /usr/share/zoneinfo/Asia/Shanghai
+          - name: kubeconfig
+            configMap:
+              name: kubeconfig
+              defaultMode: 420
   ...
   ```
 

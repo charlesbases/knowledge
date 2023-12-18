@@ -902,9 +902,65 @@ sed -i -s '/--metric-resolution/a\        - --kubelet-insecure-tls' metrics.yaml
 
 ---
 
-## 6. 退出状态
+## 6. 常用命令
 
-### 6.1. OOMKilled
+### 6.1. namespace
+
+```shell
+# 创建 namespace
+kubectl create namespace app
+# 配置首选 namespace
+kubectl config set-context --current --namespace=app
+
+# 查看当前上下文 namespace
+kubectl config view --minify --output 'jsonpath={..namespace}'
+```
+
+### 6.2. pod
+
+```shell
+# 镜像升级
+kubectl set image deployment app nginx=nginx:latest
+
+# 进入容器
+kubectl exec -it app -c srv -- bash
+
+# 执行命令
+kubectl exec app -c srv -- "date"
+```
+
+### 6.3. label
+
+```shell
+# 查看节点标签
+kubectl get nodes --show-labels
+# 添加节点标签
+kubectl label nodes <node-name> <label-key>=<label-value>
+# 删除标签
+kubectl label nodes <node-name> <label-key>-
+```
+
+### 6.4. taint
+
+```shell
+# 查看 master 节点
+kubectl describe nodes kube-master
+# 去除污点
+kubectl taint nodes kube-master node-role.kubernetes.io/master:NoSchedule-
+```
+
+### 6.5. apply
+
+```shell
+# 从管道创建资源
+cat nginx.yaml | kubectl apply -f -
+```
+
+---
+
+## 7. 退出状态
+
+### 7.1. OOMKilled
 
 ```shell
 # Exit 137
@@ -913,9 +969,9 @@ sed -i -s '/--metric-resolution/a\        - --kubelet-insecure-tls' metrics.yaml
 
 ---
 
-## 7. 问题排查
+## 8. 问题排查
 
-### 7.1. CNI failed
+### 8.1. CNI failed
 
 ```shell
 # 查看 CNI 查看状态
@@ -927,7 +983,7 @@ sudo journalctl -xeu kubelet | grep cni
 
 ---
 
-### 7.2. node-NotReady
+### 8.2. node-NotReady
 
 ```shell
 # 查看 node 日志
@@ -942,11 +998,11 @@ sudo journalctl -xeu kubelet
 
 ---
 
-### 7.3. [node-DiskPressure](#1.4.1.-存储目录)
+### 8.3. [node-DiskPressure](#1.4.1.-存储目录)
 
 ---
 
-### 7.4. pod-Evicted
+### 8.4. pod-Evicted
 
 ```shell
 # 查看
@@ -958,7 +1014,7 @@ kubectl get pods -A | grep Evicted | awk '{print $1}' | sort | uniq | while read
 
 ---
 
-### 7.5. orphaned pod
+### 8.5. orphaned pod
 
 ```shell
 # Pod 异常退出，导致数据卷挂载点在卸载过程中没有清理干净，最终导致Pod沦为僵尸Pod。Kubelet的GC流程对数据卷垃圾回收实现并不完善，目前需要手动或脚本自动化实现垃圾挂载点的清理工作。
@@ -997,7 +1053,7 @@ kubectl get pods -A | grep Evicted | awk '{print $1}' | sort | uniq | while read
     cd $rootdir/pods/$podid
     ```
 
-### 7.6. NodePort 无法访问
+### 8.6. NodePort 无法访问
 
 ```shell
 # 查看 service 是否绑定 pod
@@ -1006,14 +1062,14 @@ kubectl get endpoints <svc>
 # 注意 selector 一致
 ```
 
-### 7.7. [Pod 互不连通](#1.4.2-kube-proxy)
+### 8.7. [Pod 互不连通](#1.4.2-kube-proxy)
 
 ```shell
 # 查看 kube-proxy 模式
 kubectl get configmaps -n kube-system kube-proxy -o yaml | grep mode
 ```
 
-### 7.8. Pod 完成不自动删除
+### 8.8. Pod 完成不自动删除
 
 ```shell
 # 查看是否添加 namespace 注解
@@ -1023,7 +1079,7 @@ kubectl describe namespace <namespace> | grep "kubectl.kubernetes.io/ttlSecondsA
 kubectl annotate namespace <namespace> "kubectl.kubernetes.io/ttlSecondsAfterFinished=30"
 ```
 
-### 7.9. terminaling
+### 8.9. terminaling
 
 - ##### 强制删除
 
