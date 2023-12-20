@@ -86,7 +86,7 @@
   ```shell
   # debain 使用 ntpd
   # sudo apt install -y ntp
-
+  
   # centos 使用 ntpdate
   # sudo yum install -y ntp
   ```
@@ -104,7 +104,7 @@
   ## netdate 系统时间
   sudo sh -c "apt install ntp -y && ntpd time.windows.com && timedatectl set-timezone 'Asia/Shanghai'"
   # sudo sh -c "yum install ntpdate -y && ntpdate time.windows.com && timedatectl set-timezone 'Asia/Shanghai'"
-
+  
   ## hwclock 硬件时间
   sudo hwclock -w
   ```
@@ -158,19 +158,19 @@
 
   ```shell
   # http://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/Packages/
-
+  
   # kubeadm-1.23.16-0.x86_64.rpm
   # kubelet-1.23.16-0.x86_64.rpm
   # kubectl-1.23.16-0.x86_64.rpm
   # cri-tools-1.26.0-0.x86_64.rpm
   # kubernetes-cni-1.2.0-0.x86_64.rpm
-
+  
   # 安装 rpm 包
   rpm -ivh *.rpm --nodeps --force
-
+  
   # 安装依赖
   sudo apt install -y socat conntrack
-
+  
   # 开机启动
   sudo sh -c "systemctl enable kubelet.service && systemctl start kubelet.service"
   ```
@@ -261,7 +261,7 @@ cat kubernetes_v1.21.11.repo | while read line; do docker pull $line && docker t
   ```shell
   # 重新加入
   # sudo sh -c "systemctl stop kubelet.service && rm -rf /etc/kubernetes/{kubelet.conf,pki/ca.crt}"
-
+  
   # join
   # sudo kubeadm join ...
   ```
@@ -302,7 +302,7 @@ cat kubernetes_v1.21.11.repo | while read line; do docker pull $line && docker t
     sudo mv /var/lib/kubelet /u01/etc/kubelet
 
     # 创建软链
-    sudo ln -s /u01/etc/kubelet /var/lib/kubelet
+    sudo ln -s /u01/etc/kubelet /var/lib/
 
     # 重启 kubelet
     sudo systemctl restart kubelet
@@ -313,34 +313,34 @@ cat kubernetes_v1.21.11.repo | while read line; do docker pull $line && docker t
     ```shell
     # stop
     sudo systemctl stop kubelet
-
+    
     # 数据迁移
     sudo mv /var/lib/kubelet/{pods,pod-resources} /u01/etc/kubelet/
-
+    
     # 查看当前 root-dir. (default: "/var/lib/kubelet")
     sudo systemctl cat kubelet | grep -- --root-dir
-
+    
     # 查看 kubelet.service 配置
     sudo systemctl cat kubelet
-
+    
     # 1、可直接修改 "kubelet.service"
     ...
     [Service]
     ExecStart=/usr/bin/kubelet [args]
     ...
-
+    
     # 2、或者修改 "kubeadm.conf"
     ...
     [Service]
     Environment="KUBELET_EXTRA_ARGS=--root-dir=/u01/etc/kubelet"
     ...
-
+    
     # KUBELET_EXTRA_ARGS
     # --root-dir=/u01/etc/kubelet            => kubelet 数据存储目录
     # --eviction-hard=nodefs.available<1%    => 在 kubelet 相关存储不足 1% 时，开始驱逐 Pod
     # --eviction-hard=nodefs.available<10Gi  => 在 kubelet 相关存储不足 10G 时，开始驱逐 Pod
     # --eviction-hard=imagefs.available<1%   => 在容器运行时，相关存储不足 1% 时，开始驱逐 Pod
-
+    
     # 重启 kubelet
     sudo systemctl restart kubelet
     ```
@@ -390,14 +390,14 @@ kubectl delete -n kube-system pods $(kubectl get pods -n kube-system | grep kube
 
   ```shell
   # kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-
+  
   # 手动拉取镜像
   docker pull flannelcni/flannel:v0.18.1
   docker pull flannelcni/flannel-cni-plugin:v1.1.0
-
+  
   # 部署 CNI 网络插件
   kubectl apply -f kube-flannel.yaml
-
+  
   # 查看状态
   kubectl get pods -n kube-system
   ```
@@ -839,7 +839,7 @@ ClusterRole:
   ···
   key: value
   ···
-
+  
   # templates
   ···
   ## 变量
@@ -998,7 +998,7 @@ sudo journalctl -xeu kubelet
 
 ---
 
-### 8.3. [node-DiskPressure](#1.4.1.-存储目录)
+### 8.3. [node-DiskPressure](#1.5.1.-root-dir)
 
 ---
 
@@ -1030,27 +1030,28 @@ kubectl get pods -A | grep Evicted | awk '{print $1}' | sort | uniq | while read
 
   ```shell
   # 查看 orphaned pod
-  sudo journalctl -xeu kubelet | grep -- orphaned | sed 's/.*"\(.*\)".*/\1/'
-
+  # <node>
+  sudo journalctl -xeu kubelet | grep -- orphaned | sed 's/.*\\"\(.*\)\\".*/\1/' | sort | uniq
+  # sudo journalctl -xeu kubelet | grep -- orphaned | sed 's/.*\\"\(.*\)\\".*/\1/' | sort | uniq | awk -v ORS=' ' '{print}' && echo
+  
   # 查看 pod name
-  podids=$(kubectl get pod -A -o jsonpath='{range .items[*]}{.metadata.namespace} {.metadata.name} {.spec.nodeName} {.metadata.uid} {"\n"}'); sudo journalctl -xeu kubelet | grep -- orphaned | sed 's/.*"\(.*\)".*/\1/' | while read line; do echo $podids | grep $line; done
-
+  # <master>
+  podids=$(kubectl get pod -A -o jsonpath='{range .items[*]}{.metadata.namespace} {.metadata.name} {.spec.nodeName} {.metadata.uid} {"\n"}'); sudo journalctl -xeu kubelet | grep -- orphaned | sed 's/.*\\"\(.*\)\\".*/\1/' | sort | uniq | while read line; do echo $podids | grep $line; done
+  
   # 清理相关 pod 目录
+  # <node>
   ```
-
+  
   - ###### node
-
+  
     ```shell
-    # 查看 kubelet 日志
-    sudo systemctl status kubelet > kubelet.log
-
     # 获取 podid
-    podid=009fd281-295d-45cc-afb0-291b967ed14f
-
+    sudo journalctl -xeu kubelet | grep -- orphaned | sed 's/.*\\"\(.*\)\\".*/\1/' | sort | uniq
+    
     # 清理目录
     # rootdir="/var/lib/kubelet"
     # 查看是否定制 root-dir `ps -ef | grep kubelet | grep root-dir`
-    cd $rootdir/pods/$podid
+    cd $rootdir/pods/<podid>
     ```
 
 ### 8.6. NodePort 无法访问
@@ -1095,18 +1096,18 @@ kubectl annotate namespace <namespace> "kubectl.kubernetes.io/ttlSecondsAfterFin
   ```shell
   namespace=target
   kubectl get ns $namespace -o json > $namespace.json
-
+  
   # 删除 spec 与 status
   vim $namespace.json
   ...
-
+  
   # 启动代理(需使用 nohup 后台运行，或者开启另一个 session)
   kubectl proxy
   # nohup kubectl proxy &
-
+  
   # 调用接口删除 namespace
   curl -k -H "Content-Type: application/json" -X PUT --data-binary @$namespace.json http://localhost:8001/api/v1/namespaces/$namespace/finalize
-
+  
   # 关闭代理
   # kill -9 $(ps -ux | grep "kubectl proxy" | awk '{if (NR ==1){print $2}}')
   # 或 close session
@@ -1121,7 +1122,7 @@ kubectl annotate namespace <namespace> "kubectl.kubernetes.io/ttlSecondsAfterFin
   ```shell
   # kubectl apply ...
   kk -a [folder|files]
-
+  
   # kubectl delete ...
   kk -d [folder|files]
   ```
@@ -1129,11 +1130,11 @@ kubectl annotate namespace <namespace> "kubectl.kubernetes.io/ttlSecondsAfterFin
   ```shell
   cat > $HOME/.super-kuberctl.sh << EOF
   #!/bin/bash
-
+  
   set -e
-
+  
   command="apply"
-
+  
   recursive() {
     local base=$1
     if [[ "${base##*.}" = "yaml" ]]; then
@@ -1145,21 +1146,21 @@ kubectl annotate namespace <namespace> "kubectl.kubernetes.io/ttlSecondsAfterFin
       done
     fi
   }
-
+  
   if [[ $1 = "-d" ]]; then
     command = "delete"
   fi
-
+  
   for arg in $@; do
     recursive $arg
   done
   EOF
-
+  
   chmod +x $HOME/.kubectl.sh
-
+  
   cat >> $HOME/.zshrc << EOF
   alias kk="$HOME/.super-kuberctl.sh"
   EOF
-
+  
   source $HOME/.zshrc
   ```
