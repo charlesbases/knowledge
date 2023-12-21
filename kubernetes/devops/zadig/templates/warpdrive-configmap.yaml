@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: warpdrive-config
+  labels:
+    {{- include "zadig.microservice.warpdrive.labels" . | nindent 4 }}
+data:
+  ADDRESS: {{ default "http" .Values.protocol }}://{{- include "zadig.endpoint" . }}
+  ASLAN_DB: {{ default "zadig" .Values.connections.mongodb.db }}
+  POETRY_API_ROOT_KEY: {{ include "zadig.rootToken" . }}
+  DISABLE_KUBE_INFORMER: "true"
+  EXECUTOR_IMAGE: {{ .Values.microservice.executor.image.repository }}:{{ .Values.microservice.executor.image.tag | default .Chart.AppVersion }}
+  MONGODB_CONNECTION_STRING: {{ .Values.connections.mongodb.connectionString }}
+  {{- if .Values.microservice.warpdrive.releaseImageTimeout }}
+  RELEASE_IMAGE_TIMEOUT: {{ .Values.microservice.warpdrive.releaseImageTimeout | quote }}
+  {{- end }}
+  {{- if .Values.microservice.warpdrive.deployPluginTimeout }}
+  DEPLOY_PLUGIN_TIMEOUT: {{ .Values.microservice.warpdrive.deployPluginTimeout | quote }}
+  {{- end }}

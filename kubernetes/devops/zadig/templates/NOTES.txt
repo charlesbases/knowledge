@@ -1,0 +1,6 @@
+Zadig has been installed successfully.
+
+Please visit the following address for system initialization:
+{{- include "zadig.endpoint" . | indent 2 }}
+
+Add wechat ID "guotimeme": get FREE Zadig Tech Support, and Join our online community.

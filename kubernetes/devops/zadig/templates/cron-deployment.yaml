@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cron
+  labels:
+    {{- include "zadig.microservice.cron.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.microservice.cron.replicas | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "zadig.microservice.cron.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "zadig.microservice.cron.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - image: {{ .Values.microservice.cron.image.repository }}:{{ .Values.microservice.cron.image.tag | default .Chart.AppVersion }}
+          imagePullPolicy: {{ .Values.microservice.cron.image.pullPolicy | default "Always" }}
+          name: cron
+          env:
+            - name: ROOT_TOKEN
+              value: {{ include "zadig.rootToken" . }}
+            - name: ASLAN_DB
+              value: {{ default "zadig" .Values.connections.mongodb.db }}
+            - name: MONGODB_CONNECTION_STRING
+              value: {{ .Values.connections.mongodb.connectionString }}
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1024M
+            requests:
+              cpu: 10m
+              memory: 10Mi

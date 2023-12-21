@@ -1,0 +1,79 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: gitlab
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  serviceName: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: r123456
+            - name: MYSQL_USER
+              value: gitlab
+            - name: MYSQL_PASSWORD
+              value: g123456
+            - name: MYSQL_DATABASE
+              value: gitlab
+          ports:
+            - containerPort: 3306
+              name: tcp
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+            requests:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - mountPath: /etc/localtime
+              name: localtime
+            - mountPath: /var/lib/mysql
+              name: data
+      restartPolicy: Always
+      volumes:
+        - hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+          name: localtime
+  volumeClaimTemplates:
+    - kind: PersistentVolumeClaim
+      apiVersion: v1
+      metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 128Gi
+        storageClassName: juicefs-sc-new
+        volumeMode: Filesystem
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: gitlab
+  labels:
+    name: mysql
+spec:
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: mysql
+  selector:
+    name: mysql
