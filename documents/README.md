@@ -158,11 +158,25 @@ git push -f
 - ##### inputrc
 
   ```shell
+  # git-bash 删除键闪屏
   sed -i -s 's/set bell-style visible/set bell-style none/g' inputrc
+  
+  # 历史记录前缀搜索
+  cat >> inputrc << EOF
+  "\e[A": history-search-backward
+  "\e[B": history-search-forward
+  EOF
   ```
 
+- ##### bash.bashrc
 
-
+  ```shell
+  # 将每个 session 的历史记录行追加到历史文件中
+  echo "PROMPT_COMMAND='history -a'" >> bash.bashrc
+  ```
+  
+  
+  
 - ##### profile.d
 
   - [git-prompt.sh](.share/scripts/git-prompt.sh)
