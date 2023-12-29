@@ -49,12 +49,24 @@ spec:
         app: "true"
       # 亲和性
       affinity:
+        # podAntiAffinity: pod 反亲和规则
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            # 多副本或集群部署时，阻止 pod 在同一节点上运行
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - nats
+              topologyKey: "kubernetes.io/hostname"
         # nodeAffinity: 节点亲和
         nodeAffinity:
           # requiredDuringSchedulingIgnoredDuringExecution: 硬亲和性。只会被调度到相应节点
           requiredDuringSchedulingIgnoredDuringExecution:
             # 节点选择器
             nodeSelectorTerms:
+              # 指定节点运行
               - matchExpressions:
                   - key: kubernetes.io/hostname
                     # operator:

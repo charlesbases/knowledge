@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-prometheusNameSpace=monitoring
+prometheusNameSpace=kubesphere-monitoring-system
 
 help() {
   echo """

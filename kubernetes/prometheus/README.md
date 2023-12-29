@@ -29,27 +29,27 @@ version=release-0.11 && git clone -b $version https://github.com/prometheus-oper
 
   ```shell
   # 若要在 Kubesphere 中集成 Prometheus，为确保版本兼容，并且 kubesphere 能正确采集集群节点信息，建议使用 Kubesphere 提供的相关 Prometheus 组件进行修改部署
-  
+
   # 查看 Kubesphere 相关 Prometheus 组件
   kubectl cp kubesphere-system/$(kubectl get pod -n kubesphere-system | grep ks-installer | awk '{print $1}'):/kubesphere/kubesphere/prometheus prometheus/kubesphere
-  
+
   # version
   # cd kubesphere && ls | while read dir; do ls $dir | grep '.yaml' | while read item; do cat $dir/$item | grep 'image: ' | sed -s 's/.*image: //g' >> images.repo; done; done && cat images.repo | sort | uniq > images.repo && cat images.repo
-  
+
   # uninstall prometheus
   cd kubesphere && ls -l | grep '^d' | awk '{print $NF}' | while read dir; do kubectl delete -f $dir; done
-  
+
   # uninstall notification-manager
   helm uninstall notification-manager -n kubesphere-monitoring-system
-  
+
   # uninstall volume
   kubectl get pvc -n kubesphere-monitoring-system | awk 'NR>1{print $1}' | while read item; do kubectl delete pvc -n kubesphere-monitoring-system $item; done
   kubectl get pv | grep 'kubesphere-monitoring-system/' | awk '{print $1}' | while read item; do kubectl delete pv $item; done
-  
+
   # 注释默认 PrometheusRule
   # 注意：需保留相关 '*.rules' 规则，确保 kubesphere 能正确采集到集群节点
   cd kubesphere && ls -l | grep '^d' | awk '{print $NF}' | while read dir; do ls $dir/*prometheusRule.yaml | while read file; do sed -i -s 's/^/#&/g' $file && if [[ $(cat $file | grep '\.rules') ]]; then echo "find rules in $file"; fi; done; done
-  
+
   # 注意：部署时，需要先执行 `kubectl apply -f prometheus-operator`
   ```
 
@@ -57,13 +57,13 @@ version=release-0.11 && git clone -b $version https://github.com/prometheus-oper
 
   ```shell
   # 若要使用官方提供的 Prometheus，为确保 kubesphere 能正确采集集群节点信息，建议直接使用 kubesphere 提供的 prometheus 相关组件的 prometheusRule
-  
+
   # 下载官方 prometheus-operator
   ...
-  
+
   # 卸载 kubesphere 安装的相关 prometheus 组件
   ...
-  
+
   # 拷贝 kubesphere 提供的 prometheusRule
   ls kubesphere -l | grep '^d' | awk '{print $NF}' | while read dir; do ls kubesphere/$dir/*prometheusRule.yaml | while read file; do cat $file | sed -s 's/kubesphere-monitoring-system/monitoring/g' > prometheus/${file##*/}; done; done
   ```
@@ -304,6 +304,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: prometheus-k8s
+  # name: kubesphere-prometheus-k8s
 rules:
 - apiGroups:
   - ""
@@ -410,7 +411,7 @@ watchdog 是一个正常的报警，这个告警的作用是：如果 alermanger
   ```shell
   file=/etc/kubernetes/manifests/kube-scheduler.yaml
   sudo sh -c "sed -s -i 's/--bind-address=127.0.0.1/--bind-address=0.0.0.0/g' $file"
-  
+
   # reset
   kubectl -n kube-system delete pods $(kubectl get pods -n kube-system | grep kube-scheduler | awk '{print $1}')
   ```
@@ -493,7 +494,7 @@ kubectl get pv | grep 'kubesphere-monitoring-system/' | awk '{print $1}' | while
   ```shell
   # v3.3
   git clone -b release-3.3 https://github.com/kubesphere/ks-installer.git && cd ks-installer/roles/ks-monitor/files/prometheus
-  
+
   # 创建 kustomization.yaml
   cat > kustomization.yaml << EOF
   kind: Kustomization
@@ -501,12 +502,12 @@ kubectl get pv | grep 'kubesphere-monitoring-system/' | awk '{print $1}' | while
   namespace: monitoring
   resources:
   EOF
-  
+
   find . -mindepth 2 -name "*.yaml" -type f -print | sed 's/^/- /' >> kustomization.yaml
-  
+
   # (可选) 移除不必要的组件
   sed -i '/grafana\//d' kustomization.yaml
-  
+
   # 部署
   kubectl apply -k .
   ```
@@ -759,8 +760,8 @@ spec:
       - name: calico-node
         ports:
         - name: http-metrics
-          hostPort: 9091  
-          containerPort: 9091                 
+          hostPort: 9091
+          containerPort: 9091
 ...
 ```
 
@@ -827,7 +828,7 @@ spec:
   selector:
     app.kubernetes.io/component: controller
   type: ClusterIP
-  
+
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -869,7 +870,7 @@ kubectl get -n ingress-nginx svc ingress-nginx-controller -o yaml
 
   ```shell
   # serviceMonitor 可绑定任意 namespace 下匹配 labels 的 service，如需指定 namespace，可通过 namespaceSelector 配置
-  
+
   ...
     namespaceSelector:
   #   any: "true"
@@ -883,15 +884,15 @@ kubectl get -n ingress-nginx svc ingress-nginx-controller -o yaml
   ```shell
   # prometheus-operator 在安装时默认只会自动发现 "default", "kube-system", "monitoring" 名称空间下新建的 PodMonitor、ServiceMonitor
   ```
-  
+
   ```shell
   # 查看 prometheus-configuration。
   kubectl -n monitoring exec prometheus-k8s-0 -c prometheus -- sh -c "cat /etc/prometheus/config_out/prometheus.env.yaml | grep 'job_name: serviceMonitor'"
   ```
-  
+
   ```shell
   # 若有相关 monitor，则 monitor 未绑定相关 service 或 pod。
-  
+
   ...
   kind: ServiceMonitor
   spec:
@@ -903,17 +904,17 @@ kubectl get -n ingress-nginx svc ingress-nginx-controller -o yaml
       matchLabels:
         {service.metadata.labels}
   ...
-  
+
   ```
-  
+
   ```shell
   # 若没有相关 monitor，则 prometheus-operator 未自动发现新加的 monitor。需配置相关 namespace 的 selector
-  
+
   # 添加节点标签
   for ns in default monitoring kube-system; do kubectl label namespaces $ns monitoring="true"; done
-  
+
   kubectl edit -n monitoring prometheuses k8s
-  
+
   ...
     podMonitorNamespaceSelector:
       matchLabels:
@@ -928,7 +929,7 @@ kubectl get -n ingress-nginx svc ingress-nginx-controller -o yaml
         - "default"
   ...
   ```
-  
+
   ```shell
   # 重新加载 prometheus
   kubectl rollout restart -n monitoring statefulset prometheus-k8s

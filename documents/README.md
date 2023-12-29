@@ -2152,6 +2152,21 @@ sudo mkdir -p $GOPATH/{bin,pkg,src}
 
 ---
 
+```shell
+# golds 文档查看
+go install go101.org/golds@latest
+# `golds std`: 查看标准库文档 
+```
+
+```shell
+# 运算符优先级
+# '.' > '&' = '*' > '--' = '++'
+#   p := &t.x <=> p := &(t.x)
+#   *p++      <=> (*p)++
+```
+
+---
+
 #### 1. test
 
 ```shell
@@ -2283,12 +2298,17 @@ sudo ln -s /usr/local/node/bin/pnpm /usr/local/bin/
 - ##### chrome
 
   ```shell
+  # other version
+  https://google-chrome.en.uptodown.com
+  ```
+
+  ```shell
   # --incognito
   # 隐身模式启动
-
+  
   # --ignore-certificate-errors
   # 忽略证书错误
-
+  
   # --disable-background-networking
   # 禁用版本检查
   ```
@@ -2299,8 +2319,6 @@ sudo ln -s /usr/local/node/bin/pnpm /usr/local/bin/
   # version
   4.11.1
   ```
-
-
 
 ---
 
@@ -2367,5 +2385,16 @@ mklink /D "C:\Program Files\CCleaner" "D:\CCleaner"
   ```shell
   for ip in {1..254}; do ping -n 1 -w 30 10.112.27.$ip; done
   ```
+  
+- msftconnecttest.com
+
+  ```shell
+  # 关闭微软网络连接测试
+  
+  regedit:
+  	"计算机\HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Services\NlaSvc\Parameters\Internet"
+  	EnableActiveProbing -> 0
+  ```
+
 
 ## ————————
