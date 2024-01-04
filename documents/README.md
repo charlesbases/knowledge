@@ -2,21 +2,7 @@
 
 ---
 
-- ##### [git](#⭐-git)
-
-- ##### [shell](#⭐-shell)
-
-- ##### [linux](#⭐-linux)
-
-- ##### [rust](#⭐-rust)
-
-- ##### [python](#⭐-python)
-
-- ##### [golang](#⭐-golang)
-
-- ##### [nodejs](#⭐-nodejs)
-
-- ##### [windows](#⭐-windows)
+[toc]
 
 ---
 
@@ -470,6 +456,13 @@ sed -n '100p' file.txt
 ```shell
 echo 'fmt.Println("hello word")' | sed 's/.*"\([^"]*\)".*/\1/'
 # hello word
+# 注意，该命令在未匹配到字符串时，会默认打印模式空间的全部内容，推荐使用下面俩种方法
+echo 'fmt.Println("hello word")' | sed 's/.*"\([^"]*\)".*/\1/;t;d'
+# ';t': 若前面的命令替换成功，则跳转到脚本末尾，绕过默认的打印行为（打印匹配行）
+# ';d': 删除模式空间的内容，即不打印任何内容
+echo 'fmt.Println("hello word")' | sed -n 's/.*"\([^"]*\)".*/\1/p'
+# '-n': 禁止自动打印模式空间的内容
+# '/p': 显示匹配行
 
 # 输出 image 列表
 sed -n '/image:/ s/image://p' calico.yaml
