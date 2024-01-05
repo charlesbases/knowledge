@@ -86,7 +86,7 @@
   ```shell
   # debain 使用 ntpd
   # sudo apt install -y ntp
-  
+
   # centos 使用 ntpdate
   # sudo yum install -y ntp
   ```
@@ -104,7 +104,7 @@
   ## netdate 系统时间
   sudo sh -c "apt install ntp -y && ntpd time.windows.com && timedatectl set-timezone 'Asia/Shanghai'"
   # sudo sh -c "yum install ntpdate -y && ntpdate time.windows.com && timedatectl set-timezone 'Asia/Shanghai'"
-  
+
   ## hwclock 硬件时间
   sudo hwclock -w
   ```
@@ -158,19 +158,19 @@
 
   ```shell
   # http://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/Packages/
-  
+
   # kubeadm-1.23.16-0.x86_64.rpm
   # kubelet-1.23.16-0.x86_64.rpm
   # kubectl-1.23.16-0.x86_64.rpm
   # cri-tools-1.26.0-0.x86_64.rpm
   # kubernetes-cni-1.2.0-0.x86_64.rpm
-  
+
   # 安装 rpm 包
   rpm -ivh *.rpm --nodeps --force
-  
+
   # 安装依赖
   sudo apt install -y socat conntrack
-  
+
   # 开机启动
   sudo sh -c "systemctl enable kubelet.service && systemctl start kubelet.service"
   ```
@@ -261,7 +261,7 @@ cat kubernetes_v1.21.11.repo | while read line; do docker pull $line && docker t
   ```shell
   # 重新加入
   # sudo sh -c "systemctl stop kubelet.service && rm -rf /etc/kubernetes/{kubelet.conf,pki/ca.crt}"
-  
+
   # join
   # sudo kubeadm join ...
   ```
@@ -313,34 +313,34 @@ cat kubernetes_v1.21.11.repo | while read line; do docker pull $line && docker t
     ```shell
     # stop
     sudo systemctl stop kubelet
-    
+
     # 数据迁移
     sudo mv /var/lib/kubelet/{pods,pod-resources} /u01/etc/kubelet/
-    
+
     # 查看当前 root-dir. (default: "/var/lib/kubelet")
     sudo systemctl cat kubelet | grep -- --root-dir
-    
+
     # 查看 kubelet.service 配置
     sudo systemctl cat kubelet
-    
+
     # 1、可直接修改 "kubelet.service"
     ...
     [Service]
     ExecStart=/usr/bin/kubelet [args]
     ...
-    
+
     # 2、或者修改 "kubeadm.conf"
     ...
     [Service]
     Environment="KUBELET_EXTRA_ARGS=--root-dir=/u01/etc/kubelet"
     ...
-    
+
     # KUBELET_EXTRA_ARGS
     # --root-dir=/u01/etc/kubelet            => kubelet 数据存储目录
     # --eviction-hard=nodefs.available<1%    => 在 kubelet 相关存储不足 1% 时，开始驱逐 Pod
     # --eviction-hard=nodefs.available<10Gi  => 在 kubelet 相关存储不足 10G 时，开始驱逐 Pod
     # --eviction-hard=imagefs.available<1%   => 在容器运行时，相关存储不足 1% 时，开始驱逐 Pod
-    
+
     # 重启 kubelet
     sudo systemctl restart kubelet
     ```
@@ -390,125 +390,17 @@ kubectl delete -n kube-system pods $(kubectl get pods -n kube-system | grep kube
 
   ```shell
   # kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-  
+
   # 手动拉取镜像
   docker pull flannelcni/flannel:v0.18.1
   docker pull flannelcni/flannel-cni-plugin:v1.1.0
-  
+
   # 部署 CNI 网络插件
   kubectl apply -f kube-flannel.yaml
-  
+
   # 查看状态
   kubectl get pods -n kube-system
   ```
-
----
-
-### 1.9. 错误信息
-
-```shell
-# 节点重置
-
-## master
-sudo sh -c "kubeadm reset && rm -rf $HOME/.kube /etc/cni/net.d/ /var/lib/cni/calico"
-
-## node
-sudo sh -c "kubeadm reset && rm -rf /etc/cni/net.d/ /var/lib/cni/calico"
-```
-
-#### 1.9.1. [ERROR CRI]
-
-```shell
-rm -rf /etc/containerd/config.toml && systemctl restart containerd
-```
-
-#### 1.9.2. [ERROR Swap]
-
-```shell
-# 未关闭虚拟内存
-# 临时关闭
-swapoff -a
-# 永久关闭
-sed -ri 's/.*swap.*/#&/' /etc/fstab
-```
-
-#### 1.9.3. [ERROR NumCPU]
-
-```shell
-# 错误的 CPU 核心数。最少为 2.
-```
-
-#### 1.9.4. [ERROR Port-10250]
-
-```shell
-# 端口被占用
-kubeadm reset -f && rm -rf $HOME/.kube
-```
-
-#### 1.9.5. timed out
-
-```shell
-# 下载基础镜像
-docker pull k8s.gcr.io/...
-
-# 重启 docker
-systemctl restart docker
-
-# 重启 kubelet
-systemctl stop kubelet
-```
-
-#### 1.9.6. connection refused
-
-```shell
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-```
-
-#### 1.9.7. kubelet is not running
-
-```shell
-# 查看 kubelet 状态
-sudo systemctl status kubelet
-```
-
-#### 1.9.8. BIRD is not ready
-
-```shell
-# 调整 calico 网络插件的网卡发现机制
-```
-
-```shell
-sed -s -i 's/- name: CLUSTER_TYPE/- name: IP_AUTODETECTION_METHOD\n              value: "interface=ens.*"\n            - name: CLUSTER_TYPE"/g' calico.yaml
-```
-
-```shell
-kubectl edit daemonsets -n kube-system calico-node
-
-...
-          env:
-            - name: IP_AUTODETECTION_METHOD
-              value: "interface=ens.*"
-            - name: CLUSTER_TYPE"
-              value: "k8s,bgp"
-...
-```
-
-#### 1.9.9. coredns ContainerCreating
-
-```shell
-# 查看 cni 版本是否与 kubernetes 版本兼容
-
-# coredns 未就绪与 cni 插件有必然联系
-kubectl describe pods -n kube-system  calico-
-
-# 删除节点上 cni 安装信息
-sudo rm -rf /etc/cni/net.d/* /var/lib/cni/calico
-
-# 重启 kubelet
-sudo systemctl restart kubelet
-```
 
 ---
 
@@ -839,7 +731,7 @@ ClusterRole:
   ···
   key: value
   ···
-  
+
   # templates
   ···
   ## 变量
@@ -971,38 +863,154 @@ cat nginx.yaml | kubectl apply -f -
 
 ## 8. 问题排查
 
-### 8.1. CNI failed
+### ————————————
+
+### [ERROR CRI]
 
 ```shell
-# 查看 CNI 查看状态
-kubectl get pods -n kube-system
+# 容器运行平台报错
 
-# 查看 cni 日志
-sudo journalctl -xeu kubelet | grep cni
+# 查看 kubelet 日志
+sudo journalctl -xeu kubelet
+
+# 查看运行平台日志(docker/containerd)
+sudo journalctl -xeu containerd
+
+# 重启容器运行平台
+rm -rf /etc/containerd/config.toml && systemctl restart containerd
 ```
 
 ---
 
-### 8.2. node-NotReady
+### [ERROR Swap]
 
 ```shell
-# 查看 node 日志
-kubectl describe nodes <node>
+# 未关闭虚拟内存
+# 临时关闭
+swapoff -a
+# 永久关闭
+sed -ri 's/.*swap.*/#&/' /etc/fstab
+```
 
-# 查看 node 节点 kubelet 状态
+---
+
+### [ERROR NumCPU]
+
+```shell
+# 错误的 CPU 核心数。最少为 2.
+```
+
+---
+
+### [ERROR Port-10250]
+
+```shell
+# kubelet 端口被占用
+
+# 查看 kubelet 日志
+sudo journalctl -xeu kubelet
+
+# 查看端口占用
+sudo lsof -i :10250
+
+# 杀掉端口占用程序
+kill -9 [pid]
+
+# 重启 kubelet 或 kubernetes
+# sudo systemctl restart kubelet
+kubeadm reset -f && rm -rf $HOME/.kube
+```
+
+---
+
+### timed out
+
+```shell
+# k8s 基础镜像拉取失败
+
+# 下载基础镜像
+docker pull k8s.gcr.io/...
+
+# 重启 docker
+systemctl restart docker
+
+# 重启 kubelet
+systemctl stop kubelet
+```
+
+---
+
+### BIRD is not ready
+
+```shell
+# 调整 calico 网络插件的网卡发现机制
+
+# 查看网卡
+ip link show
+
+# 添加环境变量 'IP_AUTODETECTION_METHOD'
+kubectl edit daemonsets -n kube-system calico-node
+
+...
+          env:
+            - name: IP_AUTODETECTION_METHOD
+              value: "interface=ens.*"
+            - name: CLUSTER_TYPE"
+              value: "k8s,bgp"
+...
+```
+
+---
+
+### connection refused
+
+```shell
+# 未找到 kubeconfig 文件
+
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+---
+
+### kubelet is not running
+
+```shell
+# 查看 kubelet 状态
 sudo systemctl status kubelet
 
 # 查看 kubelet 日志
 sudo journalctl -xeu kubelet
+
+# 重启 kubelet
+sudo systemctl restart kubelet
 ```
 
 ---
 
-### 8.3. [node-DiskPressure](#1.5.1.-root-dir)
+### coredns ContainerCreating
+
+```shell
+# 查看 cni 版本是否与 kubernetes 版本兼容
+
+# coredns 未就绪与 cni 插件有必然联系
+kubectl describe pods -n kube-system  calico-
+
+# 删除节点上 cni 安装信息
+sudo rm -rf /etc/cni/net.d/* /var/lib/cni/calico
+
+# 重启 kubelet
+sudo systemctl restart kubelet
+```
 
 ---
 
-### 8.4. pod-Evicted
+### ————————————
+
+---
+
+### pod-Evicted
 
 ```shell
 # 查看
@@ -1014,7 +1022,7 @@ kubectl get pods -A | grep Evicted | awk '{print $1}' | sort | uniq | while read
 
 ---
 
-### 8.5. orphaned pod
+### orphaned pod
 
 ```shell
 # Pod 异常退出，导致数据卷挂载点在卸载过程中没有清理干净，最终导致Pod沦为僵尸Pod。Kubelet的GC流程对数据卷垃圾回收实现并不完善，目前需要手动或脚本自动化实现垃圾挂载点的清理工作。
@@ -1033,54 +1041,80 @@ kubectl get pods -A | grep Evicted | awk '{print $1}' | sort | uniq | while read
   # <node>
   sudo journalctl -xeu kubelet | grep -- orphaned | sed 's/.*\\"\(.*\)\\".*/\1/' | sort | uniq
   # sudo journalctl -xeu kubelet | grep -- orphaned | sed 's/.*\\"\(.*\)\\".*/\1/' | sort | uniq | awk -v ORS=' ' '{print}' && echo
-  
+
   # 查看 pod name
   # <master>
   podids=$(kubectl get pod -A -o jsonpath='{range .items[*]}{.metadata.namespace} {.metadata.name} {.spec.nodeName} {.metadata.uid} {"\n"}'); sudo journalctl -xeu kubelet | grep -- orphaned | sed 's/.*\\"\(.*\)\\".*/\1/' | sort | uniq | while read line; do echo $podids | grep $line; done
-  
+
   # 清理相关 pod 目录
   # <node>
   ```
-  
+
   - ###### node
-  
+
     ```shell
     # 获取 podid
     sudo journalctl -xeu kubelet | grep -- orphaned | sed 's/.*\\"\(.*\)\\".*/\1/' | sort | uniq
-    
+
     # 清理目录
     # rootdir="/var/lib/kubelet"
     # 查看是否定制 root-dir `ps -ef | grep kubelet | grep root-dir`
     cd $rootdir/pods/<podid>
     ```
 
-### 8.6. NodePort 无法访问
+---
 
-```shell
-# 查看 service 是否绑定 pod
-kubectl get endpoints <svc>
-
-# 注意 selector 一致
-```
-
-### 8.7. [Pod 互不连通](#1.4.2-kube-proxy)
+### [pod 互不连通](#1.4.2-kube-proxy)
 
 ```shell
 # 查看 kube-proxy 模式
 kubectl get configmaps -n kube-system kube-proxy -o yaml | grep mode
 ```
 
-### 8.8. Pod 完成不自动删除
+---
+
+### pod 完成不自动删除
 
 ```shell
-# 查看是否添加 namespace 注解
-kubectl describe namespace <namespace> | grep "kubectl.kubernetes.io/ttlSecondsAfterFinished"
+# Job 添加 TTL 机制
+# kubectl explain job.spec
+.spec.ttlSecondsAfterFinished: 604800 # 7d
 
-# annotation
-kubectl annotate namespace <namespace> "kubectl.kubernetes.io/ttlSecondsAfterFinished=30"
+# 删除已完成 pod
+kubectl -n <namespace> get pod | awk '/Completed/ {print $1}' | while read line; do kubectl -n <namespace> delete pod $line; done
 ```
 
-### 8.9. terminaling
+---
+
+### ————————————
+
+---
+
+### node-NotReady
+
+```shell
+# 查看 node 日志
+kubectl describe nodes <node>
+
+# 查看 node 节点 kubelet 状态
+sudo systemctl status kubelet
+
+# 查看 kubelet 日志
+sudo journalctl -xeu kubelet
+```
+
+---
+
+### [node-DiskPressure](#1.5.1.-root-dir)
+
+---
+
+
+### ————————————
+
+---
+
+### terminaling
 
 - ##### 强制删除
 
@@ -1096,24 +1130,94 @@ kubectl annotate namespace <namespace> "kubectl.kubernetes.io/ttlSecondsAfterFin
   ```shell
   namespace=target
   kubectl get ns $namespace -o json > $namespace.json
-  
+
   # 删除 spec 与 status
   vim $namespace.json
   ...
-  
+
   # 启动代理(需使用 nohup 后台运行，或者开启另一个 session)
   kubectl proxy
   # nohup kubectl proxy &
-  
+
   # 调用接口删除 namespace
   curl -k -H "Content-Type: application/json" -X PUT --data-binary @$namespace.json http://localhost:8001/api/v1/namespaces/$namespace/finalize
-  
+
   # 关闭代理
   # kill -9 $(ps -ux | grep "kubectl proxy" | awk '{if (NR ==1){print $2}}')
   # 或 close session
   ```
 
-------
+---
+
+### nodeport 无法访问
+
+```shell
+# 查看 service 是否绑定 pod
+kubectl get endpoints <svc>
+
+# 注意 selector 一致
+```
+
+---
+
+### CNI failed
+
+```shell
+# 查看 CNI 查看状态
+kubectl get pods -n kube-system
+
+# 查看 cni 日志
+sudo journalctl -xeu kubelet | grep cni
+```
+
+---
+
+### k8s 证书到期
+
+```shell
+# 具体所表现的错误为：
+# 1. pod 无法创建；
+# 2. kubectl、kube-apiserver、kube-scheduler、kube-controller-manager 日志会有 certificate、Unanthorized 关键字的错误提示
+
+# kubesphere_v3.2 之后会自动更新 kubernetes 证书
+```
+
+```shell
+# 若搭建了高可用集群，一下操作在各 master 节点上操作
+
+# 查看证书有效期
+sudo kubeadm certs check-expiration
+
+# 备份
+sudo cp -rf /etc/kubernetes /etc/kubernetes.bak.$(date +'%Y%m%d')
+
+# 更新证书(一年)
+sudo kubeadm certs renew all
+
+# 备份旧的 admin 配置文件
+# mv $HOME/.kube/config $HOME/.kube/config.bak.$(date +'%Y%m%d')
+# 使用新生成的 admin 配置文件
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# 重启 kubelet、kube-apiserver、kube-scheduler、kube-controller-manager
+sudo systemctl restart kubelet
+# docker ps | awk '/etcd/ && /pause/ {print $1}' | xargs -i docker restart {}
+# docker ps | awk '/kube-apiserver/ && /pause/ {print $1}' | xargs -i docker restart {}
+# docker ps | awk '/kube-scheduler/ && /pause/ {print $1}' | xargs -i docker restart {}
+# docker ps | awk '/kube-controller-manager/ && /pause/ {print $1}' | xargs -i docker restart {}
+
+# 若证书更新后，pod 还未创建，kube-apiserver、kube-scheduler、kube-controller-manager 还有相关错误日志，可将 /etc/kubernetes/manifests/*.yaml 移出后等待片刻再重新移入即可
+sudo mv /etc/kubernetes/manifests/*.yaml $HOME/.
+# sleep 3s
+sudo mv $HOME/*.yaml /etc/kubernetes/manifests/.
+```
+
+---
+
+### ————————————
+
+---
 
 ## 99. scripts
 
@@ -1122,7 +1226,7 @@ kubectl annotate namespace <namespace> "kubectl.kubernetes.io/ttlSecondsAfterFin
   ```shell
   # kubectl apply ...
   kk -a [folder|files]
-  
+
   # kubectl delete ...
   kk -d [folder|files]
   ```
@@ -1130,11 +1234,11 @@ kubectl annotate namespace <namespace> "kubectl.kubernetes.io/ttlSecondsAfterFin
   ```shell
   cat > $HOME/.super-kuberctl.sh << EOF
   #!/bin/bash
-  
+
   set -e
-  
+
   command="apply"
-  
+
   recursive() {
     local base=$1
     if [[ "${base##*.}" = "yaml" ]]; then
@@ -1146,21 +1250,21 @@ kubectl annotate namespace <namespace> "kubectl.kubernetes.io/ttlSecondsAfterFin
       done
     fi
   }
-  
+
   if [[ $1 = "-d" ]]; then
     command = "delete"
   fi
-  
+
   for arg in $@; do
     recursive $arg
   done
   EOF
-  
+
   chmod +x $HOME/.kubectl.sh
-  
+
   cat >> $HOME/.zshrc << EOF
   alias kk="$HOME/.super-kuberctl.sh"
   EOF
-  
+
   source $HOME/.zshrc
   ```
