@@ -18,10 +18,10 @@
   ```shell
   # 删除本地
   git tag -d v1.0.0
-  
+
   # 删除远程
   git push origin :refs/tags/v1.0.0
-  
+
   #
   v=v1.0.0; git tag -d $v && git push origin :refs/tags/$v
   ```
@@ -63,10 +63,10 @@ git branch --set-upstream-to=<remote-branch> <local-branch>
   ```shell
   # 本地分支
   git branch -d branch
-  
+
   # 远程分支
   git push origin -d branch
-  
+
   #
   b=branch; git push origin --delete $b && git branch -d $b
   ```
@@ -92,13 +92,13 @@ git branch --set-upstream-to=<remote-branch> <local-branch>
   ```shell
   # 删除 git 缓存
   git rm --cached [module]
-  
+
   # 删除 .gitmodules 子模块信息
   [submodule "module"]
-  
+
   # 删除 .git/config 子模块信息
   [submodule "module"]
-  
+
   # 删除 .git 子模块文件
   rm -rf .git/modules/[model]
   ```
@@ -134,6 +134,11 @@ git push -f
 
 ## 9. git-for-windows
 
+```shell
+# git 启动时会扫描临时文件夹，启动慢时删除临时文件夹即可
+rm -rf ~/AppData/Local/Temp/* &>/dev/null
+```
+
 - ##### vimrc
 
   ```shell
@@ -145,7 +150,7 @@ git push -f
   ```shell
   # git-bash 删除键闪屏
   sed -i -s 's/set bell-style visible/set bell-style none/g' inputrc
-  
+
   # 历史记录前缀搜索
   cat >> inputrc << EOF
   "\e[A": history-search-backward
@@ -159,9 +164,9 @@ git push -f
   # 将每个 session 的历史记录行追加到历史文件中
   echo "PROMPT_COMMAND='history -a'" >> bash.bashrc
   ```
-  
-  
-  
+
+
+
 - ##### profile.d
 
   - [git-prompt.sh](.share/scripts/git-prompt.sh)
@@ -171,6 +176,7 @@ git push -f
 ## 10. githubusercontent
 
 ```shell
+# 下载 github 项目文件
 wget -O - https://raw.githubusercontent/<user>/<repo>/<branch>/<filepath> > <file>
 ```
 

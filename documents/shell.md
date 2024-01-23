@@ -549,6 +549,24 @@ echo ${string//substring/replacement}
 
 ## ——————
 
+## redirect
+
+```shell
+# > : 用于将标准输出重定向到文件 eg: date >/dev/null
+# >&: 用于将一个文件描述符重定向到另一个文件描述符 eg: date 2>&1
+# &>: 用于将标准输入和标准输出重定向到文件 eg: date &>/dev/null
+# >>: 用于将标准输出追加到文件 eg: date >> a.txt
+
+# < : 用于将文件作为命令的标准输入 eg: cat < bash.bashrc
+# | : 管道。用于将上一个命令的标准输出作为下一个命令的标准输入 eg: date | cat
+
+# <(command): 使用进程替换，将命令的输出作为文件传递给另一个命令 eg: cat <(date)
+
+# <<< : here-string. 允许将一个字符串作为上一个命令的标准输入 eg: grep -o Hello <<< "Hello, World"
+```
+
+---
+
 ## string
 
 - 显示匹配字符串

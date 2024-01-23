@@ -69,6 +69,17 @@ mklink /D "C:\Program Files\CCleaner" "D:\CCleaner"
 
 ## others
 
+- translate.google.com
+
+  ```shell
+  # 解决国内 google 翻译被墙
+  
+  cat >> 'C:\Windows\System32\drivers\etc\hosts' << EOF
+  108.177.97.100 translate.google.com
+  108.177.97.100 translate.googleapis.com
+  EOF
+  ```
+
 - 在文件资源管理器中打开当前路径
 
   ```shell

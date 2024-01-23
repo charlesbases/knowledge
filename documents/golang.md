@@ -40,10 +40,12 @@ go install go101.org/golds@latest
 
 ```shell
 # 运行当前目录下所有测试函数
+# -v: 将缓冲区内容输出到终端
 go test -v .
 
 # 运行指定函数
-go test -run TestName .
+# 注意：-run 是运行正则匹配的测试环境
+go test -v -run TestName .
 ```
 
 ### 1.1. cover
@@ -128,25 +130,7 @@ https://zhuanlan.zhihu.com/p/396363069
 
 ## 3. tools
 
-### 3.1. govet
-
-```shell
-```
-
-### 3.2. golint
-
-```shell
-# [github] https://github.com/golangci/golangci-lint
-# [doc]    https://golangci-lint.run/usage/install/#local-installation
-
-# install [linux/windows]
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
-
-# install [macos]
-brew install golangcli-lint
-```
-
-### 3.3. goimports
+### 3.1. goimports
 
 ```shell
 go install golang.org/x/tools/cmd/goimports@latest

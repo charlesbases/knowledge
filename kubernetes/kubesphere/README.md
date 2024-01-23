@@ -43,10 +43,39 @@ wget -O installation.sh https://github.com/kubesphere/ks-installer/releases/down
 ## 2. 访问控制
 
 ```shell
-1. 创建企业空间: 平台管理 - 访问控制 - 企业空间 - 创建
-2. 企业空间配置: 平台管理 - 集群管理 - 项目 - 分配企业空间
-3. 创建访问用户: 平台管理 - 访问控制 - 用户 - 创建
-4. 添加企业用户: 企业空间 - 企业空间设置 - 企业空间成员 - 添加
+# 名词解释
+
+# 项目 -- namespace
+# 企业空间 -- 多个 namespace 的集合
+```
+
+```shell
+1. 创建企业空间: 
+   平台管理 - 访问控制 - 企业空间 - 创建
+
+2. 企业空间配置: 
+   平台管理 - 集群管理 - 项目 - 分配企业空间
+
+3. 创建访问用户: 
+   平台管理 - 访问控制 - 用户 - 创建
+
+4. 添加企业用户: 
+   企业空间 - 企业空间设置 - 企业空间成员 - 添加
+
+5. 移除企业空间下的项目
+# 企业空间下的项目，在 kubernetes 中是根据 namespace 下的 label 相关联
+
+# 查看项目与企业空间关联表
+# kubectl get namespace --show-labels | grep -- kubesphere.io/workspace
+
+# 查看项目所绑定的企业空间
+# kubectl get namespace map --show-labels | grep -- 'kubesphere.io/workspace'
+
+# 查看企业空间下所有的项目
+# kubectl get namespace --show-labels | grep -- kubesphere.io/workspace=map
+
+# 移除企业空间下的项目
+# kubectl label namespace <namespace> kubesphere.io/workspace-
 ```
 
 ------
